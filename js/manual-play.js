@@ -186,8 +186,8 @@ const manualPlay = {
                 console.log("✓ HAND CARD DRAG START:", handCard.getAttribute("data-card-instance-id"));
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("cardInstanceId", handCard.getAttribute("data-card-instance-id") || "");
-                e.dataTransfer.setData("playerKey"
-                e.dataTransfer.setData("fromHand", "true");
+              e.dataTransfer.setData("playerKey", this.state.currentPlayer);
+e.dataTransfer.setData("fromHand", "true");
                 e.dataTransfer.setData("text/html", handCard.innerHTML);
                 handCard.style.opacity = "0.5";
                 handCard.style.cursor = "grabbing";
