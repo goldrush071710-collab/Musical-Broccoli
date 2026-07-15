@@ -1773,6 +1773,11 @@ function renderDonArea(player, areaId) {
         img.dataset.donIndex = String(i);
         img.draggable = true;
 
+        img.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+            returnDonCardToDeck(player, i, false);
+        });
+
         donArea.appendChild(img);
     }
 
@@ -1784,6 +1789,11 @@ function renderDonArea(player, areaId) {
         img.className = "don-card-img rested-don";
         img.dataset.player = playerKey;
         img.draggable = true;
+
+        img.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+            returnDonCardToDeck(player, null, true);
+        });
 
         donArea.appendChild(img);
     }
@@ -2011,6 +2021,39 @@ function renderFloatingDon() {
             }
         });
     }
+}
+
+function returnDonCardToDeck(player, donIndex, isRested) {
+    const playerKey = getPlayerKey(player);
+
+    if (!playerKey || !gameState) return;
+
+    if (isRested) {
+        if (player.restedDon < 1) return;
+        player.restedDon -= 1;
+    } else {
+        if (player.don < 1 || donIndex >= player.don) return;
+        player.don -= 1;
+
+        if (
+            selectedDonAttachment &&
+            selectedDonAttachment.playerKey === playerKey
+        ) {
+            const newIndexes = selectedDonAttachment.indexes
+                .filter(index => index !== donIndex)
+                .map(index => (index > donIndex ? index - 1 : index));
+
+            selectedDonAttachment = newIndexes.length
+                ? { playerKey, indexes: newIndexes }
+                : null;
+        }
+    }
+
+    addGameLog(`${player.name} returned 1 DON!! to the DON!! deck.`);
+    updateDonDisplay();
+    renderDonDecks();
+    renderLeaders();
+    renderCharacters();
 }
 
 function handleDonSelectionClick(player, donIndex) {
