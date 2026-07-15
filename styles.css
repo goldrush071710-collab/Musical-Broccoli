@@ -1138,7 +1138,7 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   align-content: center;
-  margin-left: 2cm;
+  margin-left: 20cm;
 }
 
 .life-area span {
