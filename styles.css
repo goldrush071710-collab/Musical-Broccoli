@@ -1135,13 +1135,15 @@ main {
   grid-column: 1;
   grid-row: 1;
   display: flex;
-  flex-direction: column; /* Stacks items vertically under each other */
-  gap: 6px;               /* Space between the label and the cards */
-  align-items: stretch;   /* Forces life cards to take up the full column width */
+  flex-direction: column;   /* Stacks items vertically under each other */
+  gap: 6px;                 /* Space between the label and the cards */
+  justify-content: center;  /* Centers the content vertically in its grid cell */
+  align-items: stretch;     /* Forces life cards to take up the full column width */
 }
 
 .life-area span {
-  grid-column: 1 / -1;
+  display: block;           /* Forces the title to take its own line at the top */
+  width: 100%;
   color: #fff;
   font-weight: 900;
   text-shadow: 0 1px 2px #123;
@@ -1157,6 +1159,7 @@ main {
   color: #fff;
   font-size: .66rem;
   font-weight: 850;
+  margin-left: 0 !important; /* Forces cards to stack cleanly without horizontal overlap */
 }
 
 .area {
@@ -1218,7 +1221,6 @@ main {
   min-height: 30px;
   width: min(720px, 100%);
 }
-
 /* Deck builder: compact collection window inspired by classic card clients. */
 #builderView {
   min-height: calc(100vh - 110px);
