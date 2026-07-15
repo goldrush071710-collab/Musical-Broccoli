@@ -447,31 +447,84 @@ body {
 .life-card:nth-child(3),
 .life-card:nth-child(4),
 .life-card:nth-child(5),
-.life-card:nth-child(6) {
+.life-card:nth-child(6),
+.life-card:nth-child(7),
+.life-card:nth-child(8),
+.life-card:nth-child(9),
+.life-card:nth-child(10),
+.life-card:nth-child(11),
+.life-card:nth-child(12),
+.life-card:nth-child(13),
+.life-card:nth-child(14),
+.life-card:nth-child(15),
+.life-card:nth-child(16) {
     transform: translate(0px, 0px);
 }
 
+/* Stack order */
 .life-card:nth-child(2) {
-    z-index: 5;
+    z-index: 15;
 }
 
 .life-card:nth-child(3) {
-    z-index: 4;
+    z-index: 14;
 }
 
 .life-card:nth-child(4) {
-    z-index: 3;
+    z-index: 13;
 }
 
 .life-card:nth-child(5) {
-    z-index: 2;
+    z-index: 12;
 }
 
 .life-card:nth-child(6) {
+    z-index: 11;
+}
+
+.life-card:nth-child(7) {
+    z-index: 10;
+}
+
+.life-card:nth-child(8) {
+    z-index: 9;
+}
+
+.life-card:nth-child(9) {
+    z-index: 8;
+}
+
+.life-card:nth-child(10) {
+    z-index: 7;
+}
+
+.life-card:nth-child(11) {
+    z-index: 6;
+}
+
+.life-card:nth-child(12) {
+    z-index: 5;
+}
+
+.life-card:nth-child(13) {
+    z-index: 4;
+}
+
+.life-card:nth-child(14) {
+    z-index: 3;
+}
+
+.life-card:nth-child(15) {
+    z-index: 2;
+}
+
+.life-card:nth-child(16) {
     z-index: 1;
 }
 
+
 /* Expanded sideways */
+
 .life-area:hover .life-card:nth-child(2),
 .life-area.open .life-card:nth-child(2) {
     transform: translateX(10px);
@@ -497,6 +550,57 @@ body {
     transform: translateX(490px);
 }
 
+.life-area:hover .life-card:nth-child(7),
+.life-area.open .life-card:nth-child(7) {
+    transform: translateX(610px);
+}
+
+.life-area:hover .life-card:nth-child(8),
+.life-area.open .life-card:nth-child(8) {
+    transform: translateX(730px);
+}
+
+.life-area:hover .life-card:nth-child(9),
+.life-area.open .life-card:nth-child(9) {
+    transform: translateX(850px);
+}
+
+.life-area:hover .life-card:nth-child(10),
+.life.area.open .life-card:nth-child(10) {
+    transform: translateX(970px);
+}
+
+.life-area:hover .life-card:nth-child(11),
+.life-area.open .life-card:nth-child(11) {
+    transform: translateX(1090px);
+}
+
+.life-area:hover .life-card:nth-child(12),
+.life-area.open .life-card:nth-child(12) {
+    transform: translateX(1210px);
+}
+
+.life-area:hover .life-card:nth-child(13),
+.life-area.open .life-card:nth-child(13) {
+    transform: translateX(1330px);
+}
+
+.life-area:hover .life-card:nth-child(14),
+.life-area.open .life-card:nth-child(14) {
+    transform: translateX(1450px);
+}
+
+.life-area:hover .life-card:nth-child(15),
+.life-area.open .life-card:nth-child(15) {
+    transform: translateX(1570px);
+}
+
+.life-area:hover .life-card:nth-child(16),
+.life-area.open .life-card:nth-child(16) {
+    transform: translateX(1690px);
+}
+
+
 .life-toggle-text {
     position: absolute;
     bottom: 8px;
@@ -510,6 +614,7 @@ body {
     z-index: 300;
     pointer-events: none;
 }
+
 
 .life-count {
     position: absolute;
