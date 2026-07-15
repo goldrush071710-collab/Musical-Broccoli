@@ -1134,11 +1134,10 @@ main {
 .life-area {
   grid-column: 1;
   grid-row: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  align-content: center;
-  margin-left: 20cm;
+  display: flex;
+  flex-direction: column; /* Stacks items vertically under each other */
+  gap: 6px;               /* Space between the label and the cards */
+  align-items: stretch;   /* Forces life cards to take up the full column width */
 }
 
 .life-area span {
