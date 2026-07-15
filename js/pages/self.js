@@ -498,7 +498,7 @@ function createPublicPlayerStateFromLocal(player) {
         lifeCount: player.life?.length || 0,
         activeTokens: Number(player.don || 0),
         restedTokens: Number(player.restedDon || 0),
-        tokenDeckCount: Number(player.donDeck ?? 10),
+        tokenDeckCount: Math.max(0, 10 - getDonOnField(player)),
         turns: Number(player.turns || 0),
         faceUpLifeCards: (player.life || [])
             .map((card, index) => card?.faceUp ? { index, card: createPublicCardSnapshot(card) } : null)
@@ -1753,6 +1753,7 @@ function addGameLog(message) {
 function updateDonDisplay() {
     renderDonArea(gameState.player1, "player1DonArea");
     renderDonArea(gameState.player2, "player2DonArea");
+    renderDonDecks();
 }
 
 function renderDonArea(player, areaId) {
@@ -1773,6 +1774,11 @@ function renderDonArea(player, areaId) {
         img.dataset.donIndex = String(i);
         img.draggable = true;
 
+        img.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+            returnDonCardToDeck(player, i, false);
+        });
+
         donArea.appendChild(img);
     }
 
@@ -1784,6 +1790,11 @@ function renderDonArea(player, areaId) {
         img.className = "don-card-img rested-don";
         img.dataset.player = playerKey;
         img.draggable = true;
+
+        img.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+            returnDonCardToDeck(player, null, true);
+        });
 
         donArea.appendChild(img);
     }
@@ -2013,6 +2024,38 @@ function renderFloatingDon() {
     }
 }
 
+function returnDonCardToDeck(player, donIndex, isRested) {
+    const playerKey = getPlayerKey(player);
+
+    if (!playerKey || !gameState) return;
+
+    if (isRested) {
+        if (player.restedDon < 1) return;
+        player.restedDon -= 1;
+    } else {
+        if (player.don < 1 || donIndex >= player.don) return;
+        player.don -= 1;
+
+        if (
+            selectedDonAttachment &&
+            selectedDonAttachment.playerKey === playerKey
+        ) {
+            const newIndexes = selectedDonAttachment.indexes
+                .filter(index => index !== donIndex)
+                .map(index => (index > donIndex ? index - 1 : index));
+
+            selectedDonAttachment = newIndexes.length
+                ? { playerKey, indexes: newIndexes }
+                : null;
+        }
+    }
+
+    addGameLog(`${player.name} returned 1 DON!! to the DON!! deck.`);
+    updateDonDisplay();
+    renderLeaders();
+    renderCharacters();
+}
+
 function handleDonSelectionClick(player, donIndex) {
     const playerKey = getPlayerKey(player);
 
@@ -2196,6 +2239,30 @@ function removeDonAttachmentConfirm() {
     updatePhaseButtonPassState();
 }
 
+function getDonOnField(player) {
+    const active = Number(player.don || 0);
+    const rested = Number(player.restedDon || 0);
+    const floating = Number(player.floatingDon?.length || 0);
+
+    let attached = 0;
+
+    if (player.leader?.attachedDon) {
+        attached += Number(player.leader.attachedDon);
+    }
+
+    player.characters?.forEach(card => {
+        if (card?.attachedDon) {
+            attached += Number(card.attachedDon);
+        }
+    });
+
+    if (player.stage?.attachedDon) {
+        attached += Number(player.stage.attachedDon);
+    }
+
+    return active + rested + floating + attached;
+}
+
 function renderDonDecks() {
     renderDonDeck(gameState.player1, "player1DonDeckArea");
     renderDonDeck(gameState.player2, "player2DonDeckArea");
@@ -2211,9 +2278,12 @@ function renderDonDeck(player, areaId) {
 
     const symbol = document.createElement("div");
     symbol.className = "don-deck-symbol";
-    
-    // Calculate remaining DON in deck: 10 total - floatingDon cards on field
-    const remaining = 10 - (player.floatingDon?.length || 0);
+
+    // Calculate remaining DON in deck: 10 total - all DON cards on the field
+    const donOnField = getDonOnField(player);
+    const remaining = Math.max(0, 10 - donOnField);
+    player.donDeck = remaining;
+
     symbol.title = `${remaining} DON!! left in deck - Click to add DON to field`;
     symbol.style.cursor = "pointer";
 
@@ -2226,19 +2296,17 @@ function renderDonDeck(player, areaId) {
     count.textContent = remaining;
 
     symbol.appendChild(glyph);
-    
+
     // Click to add DON from deck to field
     const handleClick = (event) => {
         event.stopPropagation();
-        if (remaining > 0 && player.don < 10) {
+        if (remaining > 0) {
             player.don++;
             window.updateDonDisplay?.();
             window.renderDonDecks?.();
             window.addGameLog?.(`Added DON to field`);
-        } else if (player.don >= 10) {
-            window.addGameLog?.(`Cannot add DON - maximum 10 on field`);
-        } else if (remaining <= 0) {
-            window.addGameLog?.(`No DON left in deck`);
+        } else {
+            window.addGameLog?.(`Cannot add DON - no DON left in deck or maximum reached`);
         }
     };
     

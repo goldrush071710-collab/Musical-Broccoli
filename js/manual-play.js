@@ -634,10 +634,10 @@ const manualPlay = {
                 const isTop = e.clientY < midY;
                 
                 if (isTop) {
-                    player.life.unshift(card);  // Top of life pile = front of array (BOTTOM insertion)
+                    player.life.push(card);  // Top of life pile = end of array
                     console.log("✓ Added to TOP of life");
                 } else {
-                    player.life.push(card);  // Bottom of life pile = end of array (TOP insertion)
+                    player.life.unshift(card);  // Bottom of life pile = front of array
                     console.log("✓ Added to BOTTOM of life");
                 }
                 
