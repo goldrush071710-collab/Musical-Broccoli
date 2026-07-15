@@ -556,10 +556,10 @@ const manualPlay = {
                 };
                 
                 if (isTop) {
-                    player.life.unshift(lifeCard);  // Top of life pile = front of array
+                    player.life.push(lifeCard);  // Top of life pile = front of array
                     console.log("✓ Added to TOP of life");
                 } else {
-                    player.life.push(lifeCard);  // Bottom of life pile = end of array
+                    player.life.unshift(lifeCard);  // Bottom of life pile = end of array
                     console.log("✓ Added to BOTTOM of life");
                 }
                 
@@ -634,10 +634,10 @@ const manualPlay = {
                 const isTop = e.clientY < midY;
                 
                 if (isTop) {
-                    player.life.unshift(card);  // Top of life pile = front of array
+                    player.life.push(card);  // Top of life pile = front of array
                     console.log("✓ Added to TOP of life");
                 } else {
-                    player.life.push(card);  // Bottom of life pile = end of array
+                    player.life.unshift(card);  // Bottom of life pile = end of array
                     console.log("✓ Added to BOTTOM of life");
                 }
                 
