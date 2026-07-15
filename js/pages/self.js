@@ -2776,6 +2776,10 @@ function renderPlayerLife(player, lifeAreaId) {
 
     const playerKey = player === gameState.player1 ? "player1" : "player2";
 
+    const LIFE_CARD_TOP_BASE = 7;
+    const LIFE_CARD_STEP = 36;
+    const LIFE_CARD_HEIGHT = 165;
+
     // Render life cards (face-down by default)
     player.life.forEach((lifeCard, lifeIndex) => {
         const cardElement = document.createElement("div");
@@ -2784,6 +2788,10 @@ function renderPlayerLife(player, lifeAreaId) {
         cardElement.setAttribute("data-card-source", "life");
         cardElement.setAttribute("data-player", playerKey);
         cardElement.setAttribute("data-life-index", lifeIndex);
+
+        // Stack every card, no matter how many — overrides any CSS cap
+        cardElement.style.setProperty("top", `${LIFE_CARD_TOP_BASE + lifeIndex * LIFE_CARD_STEP}px`, "important");
+        cardElement.style.setProperty("z-index", `${1000 - lifeIndex}`, "important");
 
         const img = document.createElement("img");
 
@@ -2887,6 +2895,15 @@ function renderPlayerLife(player, lifeAreaId) {
     count.textContent = player.life.length;
 
     lifeArea.appendChild(count);
+
+    // The container itself collapses to ~0 height because every child is
+    // position:absolute — grow it to match the pile so the whole stack
+    // (not just pixels directly on a card) is a valid drop target. It's
+    // fine for this to extend past the fixed grid row and go off-screen.
+    const zoneHeight = player.life.length > 0
+        ? LIFE_CARD_TOP_BASE + (player.life.length - 1) * LIFE_CARD_STEP + LIFE_CARD_HEIGHT
+        : LIFE_CARD_HEIGHT;
+    lifeArea.style.setProperty("min-height", `${zoneHeight}px`, "important");
 
     setupCardPreview();
 }
