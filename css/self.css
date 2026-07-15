@@ -3393,7 +3393,18 @@ body {
 }
 
 .don-deck-number {
-    display: none !important;
+    display: block !important;
+
+    min-width: 30px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    text-align: center;
+    margin-top: 4px;
+    z-index: 50;
 }
 
 .deck-count-badge,
