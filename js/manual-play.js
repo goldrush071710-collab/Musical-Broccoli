@@ -123,7 +123,7 @@ const manualPlay = {
         
         // Helper to highlight all zones
         const highlightAllZones = () => {
-            document.querySelectorAll(".character-area, .stage-area, .trash-area, .hand, .life-area").forEach(zone => {
+            document.querySelectorAll(".character-area, .stage-area, .trash-area, .hand, .life-area, .deck-area").forEach(zone => {
                 zone.classList.add(highlightClass);
                 zone.style.background = "#4a90e2";
                 zone.style.border = "3px solid #2563eb";
@@ -140,8 +140,8 @@ const manualPlay = {
                 zone.style.border = "";
                 zone.style.boxShadow = "";
             });
-            // Also clear life zone split indicators
-            document.querySelectorAll(".life-drop-zone").forEach(z => z.remove());
+            // Also clear life/deck zone split indicators
+            document.querySelectorAll(".life-drop-zone, .deck-drop-zone").forEach(z => z.remove());
         };
         
         // Drag and drop - cards from deck to board/hand/life
@@ -408,21 +408,23 @@ const manualPlay = {
         // dragover - allow zones for regular cards and show life zone split
         document.addEventListener("dragover", (e) => {
             if (!e.target || typeof e.target.closest !== "function") return;
-            const zone = e.target.closest(".character-area, .stage-area, .trash-area, .hand, .don-area, .life-area");
+            const zone = e.target.closest(".character-area, .stage-area, .trash-area, .hand, .don-area, .life-area, .deck-area");
             if (zone) {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
                 
-                // If hovering over life area, show top/bottom zones
-                if (zone.classList.contains("life-area")) {
-                    const existingZones = document.querySelectorAll(".life-drop-zone");
+                // If hovering over life area or deck area, show top/bottom zones
+                if (zone.classList.contains("life-area") || zone.classList.contains("deck-area")) {
+                    const isLife = zone.classList.contains("life-area");
+                    const zoneClass = isLife ? "life-drop-zone" : "deck-drop-zone";
+                    const existingZones = document.querySelectorAll("." + zoneClass);
                     if (existingZones.length === 0) {
                         const rect = zone.getBoundingClientRect();
                         const midX = rect.left + rect.width / 2;
                         
                         // Top half zone
                         const topZone = document.createElement("div");
-                        topZone.className = "life-drop-zone life-top-zone";
+                        topZone.className = zoneClass + " " + (isLife ? "life-top-zone" : "deck-top-zone");
                         topZone.style.position = "fixed";
                         topZone.style.top = rect.top + "px";
                         topZone.style.left = rect.left + "px";
@@ -443,7 +445,7 @@ const manualPlay = {
                         
                         // Bottom half zone
                         const bottomZone = document.createElement("div");
-                        bottomZone.className = "life-drop-zone life-bottom-zone";
+                        bottomZone.className = zoneClass + " " + (isLife ? "life-bottom-zone" : "deck-bottom-zone");
                         bottomZone.style.position = "fixed";
                         bottomZone.style.top = (rect.top + rect.height / 2) + "px";
                         bottomZone.style.left = rect.left + "px";
@@ -458,9 +460,9 @@ const manualPlay = {
                         bottomZone.style.alignItems = "center";
                         bottomZone.style.justifyContent = "center";
                         bottomZone.style.color = "white";
-                        bottomZone.style.fontSize = "14px";
                         bottomZone.style.fontSize = "12px";
                         bottomZone.style.fontWeight = "bold";
+                        bottomZone.style.textShadow = "1px 1px 3px rgba(0, 0, 0, 0.8)";
                         
                         document.body.appendChild(topZone);
                         document.body.appendChild(bottomZone);
@@ -538,12 +540,28 @@ const manualPlay = {
             const charArea = e.target.closest(".character-area");
             const stageArea = e.target.closest(".stage-area");
             const trashArea = e.target.closest(".trash-area");
+            const deckArea = e.target.closest(".deck-area");
             
             // Remove from deck
             player.deck.splice(deckIndex, 1);
             console.log("✓ Removed from deck:", card.name);
             
-            if (lifeArea) {
+            if (deckArea) {
+                // Dropping back on deck - determine top or bottom
+                const rect = deckArea.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isTop = e.clientY < midY;
+                
+                if (isTop) {
+                    player.deck.push(card);  // Top of deck = end of array (what we draw from)
+                    console.log("✓ Added to TOP of deck");
+                } else {
+                    player.deck.unshift(card);  // Bottom of deck = front of array
+                    console.log("✓ Added to BOTTOM of deck");
+                }
+                
+                window.renderDecks?.();
+            } else if (lifeArea) {
                 // Determine if top or bottom based on mouse Y position
                 const rect = lifeArea.getBoundingClientRect();
                 const midY = rect.top + rect.height / 2;
@@ -680,10 +698,10 @@ const manualPlay = {
                 const isTop = e.clientY < midY;
                 
                 if (isTop) {
-                    player.deck.unshift(card);  // Top = end of array (what we draw from)
+                    player.deck.push(card);  // Top of deck = end of array (what we draw from)
                     console.log("✓ Added to TOP of deck");
                 } else {
-                    player.deck.push(card);  // Bottom = front of array
+                    player.deck.unshift(card);  // Bottom of deck = front of array
                     console.log("✓ Added to BOTTOM of deck");
                 }
                 
@@ -753,7 +771,7 @@ const manualPlay = {
             if (charSlot) zone = charSlot.parentElement;
             
             if (!zone) {
-                zone = e.target.closest(".character-area, .stage-area, .trash-area, .life-area");
+                zone = e.target.closest(".character-area, .stage-area, .trash-area, .life-area, .deck-area");
             }
             
             if (!zone) {
@@ -826,6 +844,22 @@ const manualPlay = {
                 
                 window.renderLifeCards?.();
                 needsHandRender = true;
+            } else if (zone.classList.contains("deck-area")) {
+                // Determine if top or bottom based on mouse Y position
+                const rect = zone.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isTop = e.clientY < midY;
+                
+                if (isTop) {
+                    player.deck.push(card);  // Top of deck = end of array (what we draw from)
+                    console.log("✓ Added to TOP of deck");
+                } else {
+                    player.deck.unshift(card);  // Bottom of deck = front of array
+                    console.log("✓ Added to BOTTOM of deck");
+                }
+                
+                window.renderDecks?.();
+                needsHandRender = true;
             }
             
             if (needsHandRender) {
@@ -894,7 +928,7 @@ const manualPlay = {
             if (charSlot) zone = charSlot.parentElement;
             
             if (!zone) {
-                zone = e.target.closest(".character-area, .stage-area, .trash-area");
+                zone = e.target.closest(".character-area, .stage-area, .trash-area, .deck-area");
             }
             
             if (!zone) {
@@ -974,6 +1008,26 @@ const manualPlay = {
                 // Also render the old zone to clear it
                 if (fromZoneType === "characters") window.renderCharacters?.();
                 if (fromZoneType === "stage") window.renderStages?.();
+            } else if (zone.classList.contains("deck-area")) {
+                // Determine if top or bottom based on mouse Y position
+                const rect = zone.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isTop = e.clientY < midY;
+                
+                if (isTop) {
+                    player.deck.push(card);  // Top of deck = end of array (what we draw from)
+                    console.log("✓ Added to TOP of deck");
+                } else {
+                    player.deck.unshift(card);  // Bottom of deck = front of array
+                    console.log("✓ Added to BOTTOM of deck");
+                }
+                
+                window.renderDecks?.();
+                
+                // Also render the old zone to clear it
+                if (fromZoneType === "characters") window.renderCharacters?.();
+                if (fromZoneType === "stage") window.renderStages?.();
+                if (fromZoneType === "trash") window.renderTrash?.();
             }
         };
 
