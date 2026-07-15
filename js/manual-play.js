@@ -415,7 +415,7 @@ const manualPlay = {
                 
                 // If hovering over life area, show top/bottom zones
                 if (zone.classList.contains("life-area")) {
-                    const existingZones = zone.querySelectorAll(".life-drop-zone");
+                    const existingZones = document.querySelectorAll(".life-drop-zone");
                     if (existingZones.length === 0) {
                         const rect = zone.getBoundingClientRect();
                         const midX = rect.left + rect.width / 2;
