@@ -1,0 +1,247 @@
+/* Manual Gameplay Sidebar */
+.manual-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 180px;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-right: 2px solid #4a90e2;
+    overflow-y: auto;
+    padding: 15px;
+    z-index: 100;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.manual-sidebar h3 {
+    color: #fff;
+    font-size: 13px;
+    margin: 12px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #4a90e2;
+    padding-bottom: 6px;
+}
+
+/* Toggles */
+.toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.toggle-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4a90e2;
+}
+
+.toggle-item label {
+    color: #aaa;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-item input[type="checkbox"]:checked + label {
+    color: #4a90e2;
+    font-weight: bold;
+}
+
+/* Tools */
+.tool-btn {
+    width: 100%;
+    padding: 8px 8px;
+    margin: 4px 0;
+    background: #f5a623;
+    border: 1px solid #d68910;
+    color: #000;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tool-btn:hover {
+    background: #ffc854;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(245, 166, 35, 0.4);
+}
+
+.tool-btn.secondary {
+    background: #6c757d;
+    border-color: #5a6268;
+    color: #fff;
+}
+
+.tool-btn.secondary:hover {
+    background: #7d8a96;
+}
+
+.tool-btn.warning {
+    background: #dc3545;
+    border-color: #c82333;
+    color: #fff;
+}
+
+.tool-btn.warning:hover {
+    background: #e74c3c;
+}
+
+/* Separator */
+.separator {
+    height: 1px;
+    background: #4a90e2;
+    margin: 12px 0;
+    opacity: 0.5;
+}
+
+/* Counter */
+.life-tracker {
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid #4a90e2;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.life-tracker-title {
+    color: #4a90e2;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.life-display {
+    font-size: 28px;
+    font-weight: bold;
+    color: #4a90e2;
+    text-align: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.life-display:hover {
+    background: rgba(74, 144, 226, 0.2);
+    transform: scale(1.05);
+}
+
+.life-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.life-btn {
+    padding: 6px;
+    background: #ffc854;
+    border: 1px solid #d68910;
+    color: #000;
+    font-weight: bold;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.life-btn:hover {
+    background: #ffd966;
+    transform: translateY(-1px);
+}
+
+/* Phase Info */
+.phase-info {
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid #4a90e2;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.phase-label {
+    color: #4a90e2;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.phase-display {
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+/* Back Button */
+.btn-back {
+    position: fixed;
+    top: 10px;
+    left: 195px;
+    z-index: 99;
+    padding: 8px 12px;
+    background: #666;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 1px solid #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    background: #777;
+}
+
+/* Main content offset for sidebar */
+.self-page {
+    margin-left: 180px;
+}
+
+/* Card rested state */
+.zone-card.rested,
+.hand-card.rested,
+.character-card.rested {
+    transform: rotate(90deg);
+}
+
+/* Scrollbar styling for sidebar */
+.manual-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.manual-sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.manual-sidebar::-webkit-scrollbar-thumb {
+    background: #4a90e2;
+    border-radius: 3px;
+}
+
+.manual-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #6ba3f5;
+}
+
+/* Drop zone highlight during drag */
+.drop-zone-highlight {
+    outline: 2px dashed #4a90e2 !important;
+    outline-offset: -4px;
+    background: rgba(74, 144, 226, 0.1) !important;
+}

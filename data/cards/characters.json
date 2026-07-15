@@ -1,0 +1,596 @@
+{
+  "ST01-002": {
+    "id": "ST01-002",
+    "cardNumber": "ST01-002",
+    "name": "Usopp",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 2,
+    "power": 2000,
+    "counter": 1000,
+    "attribute": "ranged",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-002.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-002-don-blocker-lock",
+        "type": "whenAttacking",
+        "text": "DON!! x2: When attacking, your opponent cannot activate Blocker if this Character has 5000 or more power during this battle."
+      },
+      {
+        "id": "ST01-002-trigger",
+        "type": "trigger",
+        "text": "Trigger: Play this card."
+      }
+    ]
+  },
+  "ST01-003": {
+    "id": "ST01-003",
+    "cardNumber": "ST01-003",
+    "name": "Karoo",
+    "cardType": "character",
+    "type": "Animal/Alabasta",
+    "color": "red",
+    "cost": 1,
+    "power": 3000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-003.png",
+    "aliases": [
+      "Carue"
+    ],
+    "keywords": [],
+    "effects": []
+  },
+  "ST01-004": {
+    "id": "ST01-004",
+    "cardNumber": "ST01-004",
+    "name": "Sanji",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 2,
+    "power": 4000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-004.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-004-don-rush",
+        "type": "continuous",
+        "text": "DON!! x2: This Character gains Rush."
+      }
+    ]
+  },
+  "ST01-005": {
+    "id": "ST01-005",
+    "cardNumber": "ST01-005",
+    "name": "Jinbe",
+    "cardType": "character",
+    "type": "Fish-Man/Straw Hat Crew",
+    "color": "red",
+    "cost": 3,
+    "power": 5000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-005.png",
+    "aliases": [
+      "Jimbei"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-005-attack-power",
+        "type": "whenAttacking",
+        "text": "DON!! x1: Your Leader or up to 1 of your Characters other than this card gains +1000 power during this turn."
+      }
+    ]
+  },
+  "ST01-006": {
+    "id": "ST01-006",
+    "cardNumber": "ST01-006",
+    "name": "Tony Tony.Chopper",
+    "cardType": "character",
+    "type": "Animal/Straw Hat Crew",
+    "color": "red",
+    "cost": 1,
+    "power": 1000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-006.png",
+    "aliases": [
+      "Chopper",
+      "Tony Tony Chopper"
+    ],
+    "keywords": [
+      "blocker"
+    ],
+    "effects": [
+      {
+        "id": "ST01-006-blocker",
+        "type": "blocker",
+        "text": "Blocker: After your opponent declares an attack, you may rest this card to make it the new target of the attack."
+      }
+    ]
+  },
+  "ST01-007": {
+    "id": "ST01-007",
+    "cardNumber": "ST01-007",
+    "name": "Nami",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 1,
+    "power": 1000,
+    "counter": 1000,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-007.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-007-attach-rested-don",
+        "type": "activateMain",
+        "text": "Activate:Main: Once Per Turn: Give up to 1 rested DON!! card to your Leader or 1 of your Characters.",
+        "oncePerTurn": true,
+        "actionId": "attachRestedDonToLeaderOrCharacter",
+        "amount": 1
+      }
+    ]
+  },
+  "ST01-008": {
+    "id": "ST01-008",
+    "cardNumber": "ST01-008",
+    "name": "Nico Robin",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 3,
+    "power": 5000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-008.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-008-attack-ko",
+        "type": "whenAttacking",
+        "text": "DON!! x1: When attacking, K.O. up to 1 of your opponent's Characters with 3000 power or less."
+      }
+    ]
+  },
+  "ST01-009": {
+    "id": "ST01-009",
+    "cardNumber": "ST01-009",
+    "name": "Nefeltari Vivi",
+    "cardType": "character",
+    "type": "Alabasta",
+    "color": "red",
+    "cost": 2,
+    "power": 4000,
+    "counter": 1000,
+    "attribute": "wisdom",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-009.png",
+    "aliases": [
+      "Nefertari Vivi",
+      "Vivi"
+    ],
+    "keywords": [],
+    "effects": []
+  },
+  "ST01-010": {
+    "id": "ST01-010",
+    "cardNumber": "ST01-010",
+    "name": "Franky",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 4,
+    "power": 6000,
+    "counter": 1000,
+    "attribute": "strike",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-010.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": []
+  },
+  "ST01-011": {
+    "id": "ST01-011",
+    "cardNumber": "ST01-011",
+    "name": "Brook",
+    "cardType": "character",
+    "type": "Straw Hat Crew",
+    "color": "red",
+    "cost": 2,
+    "power": 3000,
+    "counter": 2000,
+    "attribute": "slash",
+    "rarity": "C",
+    "image": "../images/ST01 Straw Hat Crew/ST01-011.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-011-on-play-don",
+        "type": "onPlay",
+        "text": "On Play: Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.",
+        "actionId": "attachRestedDonToLeaderOrCharacter",
+        "amount": 2
+      }
+    ]
+  },
+  "ST01-012": {
+    "id": "ST01-012",
+    "cardNumber": "ST01-012",
+    "name": "Monkey.D.Luffy",
+    "cardType": "character",
+    "type": "Supernovas/Straw Hat Crew",
+    "color": "red",
+    "cost": 5,
+    "power": 6000,
+    "counter": 0,
+    "attribute": "strike",
+    "rarity": "SR",
+    "image": "../images/ST01 Straw Hat Crew/ST01-012.png",
+    "aliases": [
+      "Luffy",
+      "Monkey D. Luffy"
+    ],
+    "keywords": [
+      "rush"
+    ],
+    "effects": [
+      {
+        "id": "ST01-012-rush",
+        "type": "continuous",
+        "text": "Rush: This card can attack on the turn in which it is played."
+      },
+      {
+        "id": "ST01-012-don-no-blocker",
+        "type": "whenAttacking",
+        "text": "DON!! x2: When attacking, your opponent cannot activate Blocker during this battle."
+      }
+    ]
+  },
+  "ST01-013": {
+    "id": "ST01-013",
+    "cardNumber": "ST01-013",
+    "name": "Roronoa Zoro",
+    "cardType": "character",
+    "type": "Supernovas/Straw Hat Crew",
+    "color": "red",
+    "cost": 3,
+    "power": 5000,
+    "counter": 0,
+    "attribute": "slash",
+    "rarity": "SR",
+    "image": "../images/ST01 Straw Hat Crew/ST01-013.png",
+    "aliases": [
+      "Zoro"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-013-don-power",
+        "type": "continuous",
+        "text": "DON!! x1: This Character gains +1000 power."
+      }
+    ]
+  },
+  "JJBA-010": {
+    "id": "JJBA-010",
+    "cardNumber": "JJBA-010",
+    "name": "Loggins",
+    "cardType": "character",
+    "type": "Bizarre",
+    "color": "blue",
+    "cost": 5,
+    "power": 5000,
+    "counter": 2000,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-010.png",
+    "aliases": [],
+    "keywords": [
+      "blocker"
+    ],
+    "effects": [
+      {
+        "id": "JJBA-010-on-play-messina-draw",
+        "type": "onPlay",
+        "text": "On Play: If there is a [Messina] on your field, draw 1 card.",
+        "actionId": "drawOneIfOwnNamedCharacter",
+        "requiredName": "Messina"
+      },
+      {
+        "id": "JJBA-010-blocker",
+        "type": "blocker",
+        "text": "Blocker"
+      }
+    ]
+  },
+  "JJBA-011": {
+    "id": "JJBA-011",
+    "cardNumber": "JJBA-011",
+    "name": "Joseph Joestar",
+    "cardType": "character",
+    "type": "Bizarre/Hamon Master",
+    "color": "green",
+    "cost": 5,
+    "power": 5000,
+    "counter": 0,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-011.png",
+    "aliases": [],
+    "keywords": [
+      "rush"
+    ],
+    "effects": [
+      {
+        "id": "JJBA-011-rush",
+        "type": "continuous",
+        "text": "Rush"
+      },
+      {
+        "id": "JJBA-011-when-attacking-don",
+        "type": "whenAttacking",
+        "text": "When Attacking: Attach up to 2 rested DON!! cards to one of your Character or Leader cards.",
+        "actionId": "attachRestedDonToLeaderOrCharacter",
+        "amount": 2,
+        "optional": true
+      }
+    ]
+  },
+  "JJBA-012": {
+    "id": "JJBA-012",
+    "cardNumber": "JJBA-012",
+    "name": "Messina",
+    "cardType": "character",
+    "type": "Bizarre",
+    "color": "green",
+    "cost": 7,
+    "power": 7000,
+    "counter": 0,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-012.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "JJBA-012-on-play-loggins",
+        "type": "onPlay",
+        "text": "On Play: You may rest 1 DON!! card: Play up to 1 [Loggins] from your hand.",
+        "actionId": "restDonPlayNamedCharacterFromHand",
+        "costActiveDon": 1,
+        "requiredName": "Loggins",
+        "optional": true
+      },
+      {
+        "id": "JJBA-012-when-attacking-refresh",
+        "type": "whenAttacking",
+        "text": "When Attacking: Once Per Turn: If there is a [Loggins] on your character field, trash it. Then set this card as active.",
+        "actionId": "trashOwnNamedCharacterSetSourceActive",
+        "requiredName": "Loggins",
+        "oncePerTurn": true
+      }
+    ]
+  },
+  "JJBA-013": {
+    "id": "JJBA-013",
+    "cardNumber": "JJBA-013",
+    "name": "Suzi Q",
+    "cardType": "character",
+    "type": "Bizarre",
+    "color": "blue",
+    "cost": 1,
+    "power": 2000,
+    "counter": 1000,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-013.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "JJBA-013-on-play-search",
+        "type": "onPlay",
+        "text": "On Play: Look at the top 5 cards of your deck; reveal up to 1 {Bizarre} type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+        "actionId": "lookTopFiveTypeAddOne",
+        "typeText": "Bizarre"
+      }
+    ]
+  },
+  "JJBA-014": {
+    "id": "JJBA-014",
+    "cardNumber": "JJBA-014",
+    "name": "Smokey Brown",
+    "cardType": "character",
+    "type": "Bizarre",
+    "color": "green",
+    "cost": 1,
+    "power": 2000,
+    "counter": 2000,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-014.png",
+    "aliases": [],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "JJBA-014-your-turn-don-power",
+        "type": "yourTurn",
+        "text": "Your Turn: DON!! x1: Give this Character +2000 power.",
+        "actionId": "attachedDonPower",
+        "requiredTokens": 1,
+        "powerModifier": 2000
+      }
+    ]
+  },
+  "JJBA-015": {
+    "id": "JJBA-015",
+    "cardNumber": "JJBA-015",
+    "name": "Caesar Anthonio Zeppeli",
+    "cardType": "character",
+    "type": "Bizarre/Hamon Master",
+    "color": "blue",
+    "cost": 3,
+    "power": 3000,
+    "counter": 1000,
+    "attribute": "special",
+    "rarity": "C",
+    "image": "../images/JoJo by User/JJBA-015.png",
+    "aliases": [
+      "Caesar Zeppeli"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "JJBA-015-on-play-search-draw",
+        "type": "onPlay",
+        "text": "On Play: Look at the top 5 cards of your deck; reveal up to 1 {Hamon} type card and add it to your hand. Then, draw 1 card.",
+        "actionId": "lookTopFiveTypeThenDrawOne",
+        "typeText": "Hamon"
+      },
+      {
+        "id": "JJBA-015-your-turn-don-power",
+        "type": "yourTurn",
+        "text": "Your Turn: DON!! x1: Give this Character +2000 power.",
+        "actionId": "attachedDonPower",
+        "requiredTokens": 1,
+        "powerModifier": 2000
+      }
+    ]
+  },
+  "BLH1-011": {
+    "id": "BLH1-011",
+    "cardNumber": "BLH1-011",
+    "name": "Gin Ichimaru",
+    "cardType": "character",
+    "type": "Soul Society / Captain / 3rd Division",
+    "color": "blue",
+    "cost": 3,
+    "power": 4000,
+    "counter": 1000,
+    "attribute": "slash/special",
+    "rarity": "C",
+    "image": "../images/Bleach by User/BLH1-011.png",
+    "aliases": [
+      "Gin"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "system": "customEffectV2",
+        "id": "BLH1-011-on-play-search",
+        "automationStatus": "automated",
+        "sourceText": "[On Play] Look at the top 5 cards of your deck, reveal up to 1 [Soul Society] type card you find there and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+        "event": {
+          "type": "onPlay",
+          "source": "thisCard",
+          "target": null,
+          "sourceType": null
+        },
+        "optional": false,
+        "limit": null,
+        "costs": [],
+        "conditions": [],
+        "targets": [
+          {
+            "id": "selection1",
+            "label": "Soul Society card",
+            "controller": "self",
+            "zone": "deckTop",
+            "count": {
+              "min": 0,
+              "max": 1
+            },
+            "optional": true,
+            "filters": [
+              {
+                "field": "type",
+                "operator": "includes",
+                "value": "Soul Society"
+              }
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "type": "searchTopDeck",
+            "amount": 5,
+            "maxSelect": 1,
+            "target": "selection1",
+            "selectedDestination": "hand",
+            "restDestination": "bottomDeck"
+          }
+        ],
+        "generatedText": "[On Play] Look at the top 5 cards of your deck, reveal up to 1 [Soul Society] type card you find there and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+        "text": "[On Play] Look at the top 5 cards of your deck, reveal up to 1 [Soul Society] type card you find there and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+        "warnings": []
+      },
+      {
+        "system": "customEffectV2",
+        "id": "BLH1-011-end-turn-rest-draw-topdeck",
+        "automationStatus": "automated",
+        "sourceText": "[End of Your Turn] You may rest this Character: Draw 1 card. Then, add 1 card from your hand to the top of your deck.",
+        "event": {
+          "type": "endOfYourTurn",
+          "source": "thisCard",
+          "target": null,
+          "sourceType": null
+        },
+        "optional": true,
+        "limit": null,
+        "costs": [
+          {
+            "type": "restThisCard"
+          }
+        ],
+        "conditions": [],
+        "targets": [
+          {
+            "id": "selection1",
+            "label": "Hand card for top deck",
+            "controller": "self",
+            "zone": "hand",
+            "count": {
+              "min": 1,
+              "max": 1
+            },
+            "optional": false,
+            "filters": []
+          }
+        ],
+        "actions": [
+          {
+            "type": "draw",
+            "amount": 1
+          },
+          {
+            "type": "placeHandTopDeckSelected",
+            "target": "selection1"
+          }
+        ],
+        "generatedText": "[End of Your Turn] You may rest this Character: Draw 1 card. Then, add 1 card from your hand to the top of your deck.",
+        "text": "[End of Your Turn] You may rest this Character: Draw 1 card. Then, add 1 card from your hand to the top of your deck.",
+        "warnings": []
+      }
+    ]
+  }
+}

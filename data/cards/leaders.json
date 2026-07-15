@@ -1,0 +1,74 @@
+{
+  "ST01-001": {
+    "id": "ST01-001",
+    "cardNumber": "ST01-001",
+    "name": "Monkey.D.Luffy",
+    "cardType": "leader",
+    "type": "Supernovas/Straw Hat Crew",
+    "color": "red",
+    "attribute": "strike",
+    "power": 5000,
+    "life": 5,
+    "rarity": "L",
+    "image": "../images/ST01 Straw Hat Crew/ST01-001.png",
+    "aliases": [
+      "Luffy",
+      "Monkey D. Luffy"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "id": "ST01-001-attach-rested-don",
+        "type": "activateMain",
+        "text": "Activate:Main: Once Per Turn: Give this Leader or up to 1 of your Characters 1 rested DON!! card.",
+        "oncePerTurn": true,
+        "actionId": "attachRestedDonToLeaderOrCharacter",
+        "amount": 1
+      }
+    ]
+  },
+  "BLH1-001": {
+    "id": "BLH1-001",
+    "cardNumber": "BLH1-001",
+    "name": "Sousuke Aizen",
+    "cardType": "leader",
+    "type": "Soul Society / Captain / 5th Division",
+    "color": "blue",
+    "attribute": "slash",
+    "power": 5000,
+    "life": 5,
+    "rarity": "L",
+    "image": "../images/Bleach by User/BLH1-001.png",
+    "aliases": [
+      "Aizen"
+    ],
+    "keywords": [],
+    "effects": [
+      {
+        "system": "customEffectV2",
+        "id": "BLH1-001-bottom-deck-replacement",
+        "automationStatus": "automated",
+        "sourceText": "When one of your Characters is placed at the bottom of your deck by an effect, you may place it on the top of your deck instead.",
+        "event": {
+          "type": "static",
+          "source": "thisCard",
+          "target": null,
+          "sourceType": null
+        },
+        "optional": false,
+        "limit": null,
+        "costs": [],
+        "conditions": [],
+        "targets": [],
+        "actions": [
+          {
+            "type": "replaceOwnCharacterBottomDeckWithTop"
+          }
+        ],
+        "generatedText": "When one of your Characters is placed at the bottom of your deck by an effect, you may place it on the top of your deck instead.",
+        "text": "When one of your Characters is placed at the bottom of your deck by an effect, you may place it on the top of your deck instead.",
+        "warnings": []
+      }
+    ]
+  }
+}
