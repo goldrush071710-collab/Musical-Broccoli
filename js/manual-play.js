@@ -186,8 +186,8 @@ const manualPlay = {
                 console.log("✓ HAND CARD DRAG START:", handCard.getAttribute("data-card-instance-id"));
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("cardInstanceId", handCard.getAttribute("data-card-instance-id") || "");
-              e.dataTransfer.setData("playerKey", this.state.currentPlayer);
-e.dataTransfer.setData("fromHand", "true");
+                e.dataTransfer.setData("playerKey", this.state.currentPlayer);
+                e.dataTransfer.setData("fromHand", "true");
                 e.dataTransfer.setData("text/html", handCard.innerHTML);
                 handCard.style.opacity = "0.5";
                 handCard.style.cursor = "grabbing";
@@ -753,7 +753,7 @@ e.dataTransfer.setData("fromHand", "true");
             if (charSlot) zone = charSlot.parentElement;
             
             if (!zone) {
-                zone = e.target.closest(".character-area, .stage-area, .trash-area");
+                zone = e.target.closest(".character-area, .stage-area, .trash-area, .life-area");
             }
             
             if (!zone) {
@@ -801,6 +801,30 @@ e.dataTransfer.setData("fromHand", "true");
                 player.trash.push(card);
                 console.log("✓ Added to trash");
                 window.renderTrash?.();
+                needsHandRender = true;
+            } else if (zone.classList.contains("life-area")) {
+                if (!player.life) player.life = [];
+                
+                // Determine if top or bottom based on mouse Y position
+                const rect = zone.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isTop = e.clientY < midY;
+                
+                const lifeCard = {
+                    ...card,
+                    faceUp: false,
+                    instanceId: card.instanceId
+                };
+                
+                if (isTop) {
+                    player.life.unshift(lifeCard);
+                    console.log("✓ Added to TOP of life");
+                } else {
+                    player.life.push(lifeCard);
+                    console.log("✓ Added to BOTTOM of life");
+                }
+                
+                window.renderLifeCards?.();
                 needsHandRender = true;
             }
             
