@@ -857,20 +857,10 @@ function snapshotToDeckDefinition(snapshot, id) {
 
 function createInitialPlayerState(playerName, deckDefinition) {
     const selectedDeck = deckDefinition || window.getAvailableDecks?.()[0];
-    let leader = window.leaders[selectedDeck.leaderKey];
-    let effectiveDeck = selectedDeck;
+    const leader = window.leaders[selectedDeck.leaderKey];
 
     if (!leader) {
-        console.warn(`Leader "${selectedDeck.leaderKey}" not found for deck "${selectedDeck.name}" — this is usually a custom card that only exists in a different browser's storage. Falling back to a preset deck.`);
-
-        const fallbackDeck = window.getAvailableDecks?.().find(d => window.leaders[d.leaderKey]);
-        if (!fallbackDeck) {
-            throw new Error(`Leader not found for deck: ${selectedDeck.name}`);
-        }
-
-        effectiveDeck = fallbackDeck;
-        leader = window.leaders[fallbackDeck.leaderKey];
-        addGameLog?.(`⚠️ Deck "${selectedDeck.name}" uses a custom leader not available in this browser. Loaded "${fallbackDeck.name}" instead.`);
+        throw new Error(`Leader not found for deck: ${selectedDeck.name}`);
     }
 
     return {
@@ -879,8 +869,8 @@ function createInitialPlayerState(playerName, deckDefinition) {
         restedDon: 0,
         donDeck: 10,
         turns: 0,
-        deck: shuffleDeck(parseDeckText(effectiveDeck.deckText)),
-        deckName: effectiveDeck.name,
+        deck: shuffleDeck(parseDeckText(selectedDeck.deckText)),
+        deckName: selectedDeck.name,
         hasMulliganed: false,
         hand: [],
         life: [],
