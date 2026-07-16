@@ -2370,244 +2370,162 @@ function showDeckViewer(player) {
     const overlay = document.createElement("div");
     overlay.className = "look-top-overlay";
     overlay.id = "deckViewerOverlay";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-    overlay.style.display = "flex";
-    overlay.style.alignItems = "center";
-    overlay.style.justifyContent = "center";
-    overlay.style.zIndex = "10000";
+    overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:10000;";
 
     const popup = document.createElement("div");
     popup.className = "look-top-popup";
-    popup.style.width = "90%";
-    popup.style.maxWidth = "800px";
-    popup.style.maxHeight = "80vh";
-    popup.style.backgroundColor = "rgba(30, 30, 30, 0.98)";
-    popup.style.border = "2px solid #888";
-    popup.style.borderRadius = "8px";
-    popup.style.display = "flex";
-    popup.style.flexDirection = "column";
-    popup.style.overflow = "hidden";
+    popup.style.cssText = "width:95%;max-width:1200px;max-height:88vh;background:rgba(20,20,20,0.98);border:2px solid #888;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;";
 
     const title = document.createElement("h2");
-    title.textContent = `${player.name}'s Deck`;
-    title.style.color = "#fff";
-    title.style.padding = "16px";
-    title.style.margin = "0";
-    title.style.borderBottom = "1px solid #555";
+    title.textContent = `${player.name}'s Deck (${player.deck.length} cards)`;
+    title.style.cssText = "color:#fff;padding:10px 16px;margin:0;border-bottom:1px solid #555;font-size:14px;";
 
     const toolbar = document.createElement("div");
-    toolbar.style.padding = "12px";
-    toolbar.style.borderBottom = "1px solid #555";
-    toolbar.style.display = "flex";
-    toolbar.style.gap = "8px";
+    toolbar.style.cssText = "padding:7px 12px;border-bottom:1px solid #555;display:flex;gap:8px;flex-wrap:wrap;";
 
-    const revealAllBtn = document.createElement("button");
-    revealAllBtn.textContent = "Reveal All";
-    revealAllBtn.style.padding = "6px 12px";
-    revealAllBtn.style.backgroundColor = "#4CAF50";
-    revealAllBtn.style.color = "white";
-    revealAllBtn.style.border = "none";
-    revealAllBtn.style.borderRadius = "4px";
-    revealAllBtn.style.cursor = "pointer";
-    revealAllBtn.onclick = () => {
-        player.deck.forEach(card => card.faceUp = true);
-        removeDeckViewer();
-        showDeckViewer(player);
-        addGameLog(`${player.name}'s deck revealed`);
-    };
+    function mkBtn(text, bg) {
+        const b = document.createElement("button");
+        b.textContent = text;
+        b.style.cssText = `padding:5px 10px;background:${bg};color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;`;
+        return b;
+    }
+
+    const revealAllBtn = mkBtn("Reveal All", "#4CAF50");
+    revealAllBtn.onclick = () => { player.deck.forEach(c => c.faceUp = true); buildGrid(); addGameLog(`${player.name}'s deck revealed`); };
     toolbar.appendChild(revealAllBtn);
 
-    const hideAllBtn = document.createElement("button");
-    hideAllBtn.textContent = "Hide All";
-    hideAllBtn.style.padding = "6px 12px";
-    hideAllBtn.style.backgroundColor = "#2196F3";
-    hideAllBtn.style.color = "white";
-    hideAllBtn.style.border = "none";
-    hideAllBtn.style.borderRadius = "4px";
-    hideAllBtn.style.cursor = "pointer";
-    hideAllBtn.onclick = () => {
-        player.deck.forEach(card => card.faceUp = false);
-        removeDeckViewer();
-        showDeckViewer(player);
-        addGameLog(`${player.name}'s deck hidden`);
-    };
+    const hideAllBtn = mkBtn("Hide All", "#2196F3");
+    hideAllBtn.onclick = () => { player.deck.forEach(c => c.faceUp = false); buildGrid(); addGameLog(`${player.name}'s deck hidden`); };
     toolbar.appendChild(hideAllBtn);
 
-    const shuffleBtn = document.createElement("button");
-    shuffleBtn.textContent = "🔀 Shuffle";
-    shuffleBtn.style.padding = "6px 12px";
-    shuffleBtn.style.backgroundColor = "#FF9800";
-    shuffleBtn.style.color = "white";
-    shuffleBtn.style.border = "none";
-    shuffleBtn.style.borderRadius = "4px";
-    shuffleBtn.style.cursor = "pointer";
-    shuffleBtn.onclick = () => {
-        shuffleDeck(player.deck);
-        removeDeckViewer();
-        showDeckViewer(player);
-        addGameLog(`${player.name}'s deck shuffled`);
-    };
+    const shuffleBtn = mkBtn("\uD83D\uDD00 Shuffle", "#FF9800");
+    shuffleBtn.onclick = () => { shuffleDeck(player.deck); buildGrid(); addGameLog(`${player.name}'s deck shuffled`); };
     toolbar.appendChild(shuffleBtn);
 
+    const hint = document.createElement("span");
+    hint.textContent = "Drag cards to reorder \u2022 Hover for actions";
+    hint.style.cssText = "color:#888;font-size:11px;align-self:center;margin-left:auto;";
+    toolbar.appendChild(hint);
+
     const cardGrid = document.createElement("div");
-    cardGrid.style.overflowY = "auto";
-    cardGrid.style.flex = "1";
-    cardGrid.style.padding = "12px";
-    cardGrid.style.display = "grid";
-    cardGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(180px, 1fr))";
-    cardGrid.style.gap = "12px";
+    cardGrid.style.cssText = "overflow-y:auto;flex:1;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;align-content:start;";
 
-    // Show deck from top to bottom (last element is top)
-    [...player.deck].reverse().forEach((card, displayIndex) => {
-        
-        const cardFrame = document.createElement("div");
-        cardFrame.style.position = "relative";
-        cardFrame.style.display = "flex";
-        cardFrame.style.flexDirection = "column";
-        cardFrame.style.backgroundColor = "#222";
-        cardFrame.style.border = "1px solid #666";
-        cardFrame.style.borderRadius = "4px";
-        cardFrame.style.overflow = "visible";
+    let dragSrcIndex = null;
 
-        const cardImg = document.createElement("img");
-        cardImg.src = card.faceUp && card.image ? card.image : cardBackImage;
-        cardImg.alt = card.faceUp && card.name ? card.name : "Card";
-        cardImg.style.width = "100%";
-        cardImg.style.height = "220px";
-        cardImg.style.objectFit = "cover";
-        cardImg.style.flexShrink = "0";
+    function buildGrid() {
+        title.textContent = `${player.name}'s Deck (${player.deck.length} cards)`;
+        cardGrid.innerHTML = "";
+        const display = [...player.deck].reverse();
 
-        const cardButtons = document.createElement("div");
-        cardButtons.style.display = "flex";
-        cardButtons.style.flexDirection = "column";
-        cardButtons.style.gap = "6px";
-        cardButtons.style.padding = "8px";
-        cardButtons.style.backgroundColor = "#111";
-        cardButtons.style.flexShrink = "0";
+        display.forEach((card, displayIndex) => {
+            const frame = document.createElement("div");
+            frame.draggable = true;
+            frame.style.cssText = "position:relative;cursor:grab;border-radius:4px;overflow:hidden;border:1px solid #555;user-select:none;transition:opacity .12s,box-shadow .12s,border-color .12s;";
 
-        const revealBtn = document.createElement("button");
-        revealBtn.textContent = card.faceUp ? "Hide" : "Reveal";
-        revealBtn.style.padding = "6px 10px";
-        revealBtn.style.fontSize = "12px";
-        revealBtn.style.backgroundColor = "#2196F3";
-        revealBtn.style.color = "white";
-        revealBtn.style.border = "none";
-        revealBtn.style.borderRadius = "2px";
-        revealBtn.style.cursor = "pointer";
-        revealBtn.onmouseover = () => revealBtn.style.backgroundColor = "#1976D2";
-        revealBtn.onmouseout = () => revealBtn.style.backgroundColor = "#2196F3";
-        revealBtn.onclick = () => {
-            card.faceUp = !card.faceUp;
-            removeDeckViewer();
-            showDeckViewer(player);
-        };
+            const badge = document.createElement("div");
+            badge.textContent = displayIndex + 1;
+            badge.style.cssText = "position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;font-weight:bold;padding:1px 5px;border-radius:3px;z-index:2;pointer-events:none;line-height:15px;min-width:14px;text-align:center;";
 
-        const handBtn = document.createElement("button");
-        handBtn.textContent = "→ Hand";
-        handBtn.style.padding = "6px 10px";
-        handBtn.style.fontSize = "12px";
-        handBtn.style.backgroundColor = "#FF9800";
-        handBtn.style.color = "white";
-        handBtn.style.border = "none";
-        handBtn.style.borderRadius = "2px";
-        handBtn.style.cursor = "pointer";
-        handBtn.onmouseover = () => handBtn.style.backgroundColor = "#F57C00";
-        handBtn.onmouseout = () => handBtn.style.backgroundColor = "#FF9800";
-        handBtn.onclick = () => {
-            // Find current index instead of pre-calculating
-            const currentIndex = player.deck.indexOf(card);
-            if (currentIndex === -1) return;
-            player.hand.push(card);
-            player.deck.splice(currentIndex, 1);
-            window.renderHands?.();
-            window.renderDecks?.();
-            removeDeckViewer();
-            addGameLog(`Card moved to ${player.name}'s hand`);
-        };
+            const img = document.createElement("img");
+            img.src = card.faceUp && card.image ? card.image : cardBackImage;
+            img.alt = card.faceUp && card.name ? card.name : "Card";
+            img.style.cssText = "width:100%;display:block;aspect-ratio:5/7;object-fit:cover;";
+            img.draggable = false;
 
-        const bottomBtn = document.createElement("button");
-        bottomBtn.textContent = "↓ Bottom";
-        bottomBtn.style.padding = "6px 10px";
-        bottomBtn.style.fontSize = "12px";
-        bottomBtn.style.backgroundColor = "#9C27B0";
-        bottomBtn.style.color = "white";
-        bottomBtn.style.border = "none";
-        bottomBtn.style.borderRadius = "2px";
-        bottomBtn.style.cursor = "pointer";
-        bottomBtn.onmouseover = () => bottomBtn.style.backgroundColor = "#7B1FA2";
-        bottomBtn.onmouseout = () => bottomBtn.style.backgroundColor = "#9C27B0";
-        bottomBtn.onclick = () => {
-            // Move to bottom = position 0 (front of array)
-            // Find current index instead of pre-calculating
-            const currentIndex = player.deck.indexOf(card);
-            if (currentIndex === -1) return;
-            player.deck.splice(currentIndex, 1);
-            player.deck.unshift(card);
-            window.renderDecks?.();
-            removeDeckViewer();
-            showDeckViewer(player);
-            addGameLog(`Card moved to bottom of ${player.name}'s deck`);
-        };
+            const hoverPanel = document.createElement("div");
+            hoverPanel.style.cssText = "position:absolute;inset:0;background:rgba(0,0,0,0.72);display:flex;flex-direction:column;gap:3px;align-items:stretch;justify-content:center;opacity:0;transition:opacity .13s;z-index:3;padding:5px;box-sizing:border-box;";
 
-        const trashBtn = document.createElement("button");
-        trashBtn.textContent = "🗑 Trash";
-        trashBtn.style.padding = "6px 10px";
-        trashBtn.style.fontSize = "12px";
-        trashBtn.style.backgroundColor = "#F44336";
-        trashBtn.style.color = "white";
-        trashBtn.style.border = "none";
-        trashBtn.style.borderRadius = "2px";
-        trashBtn.style.cursor = "pointer";
-        trashBtn.onmouseover = () => trashBtn.style.backgroundColor = "#D32F2F";
-        trashBtn.onmouseout = () => trashBtn.style.backgroundColor = "#F44336";
-        trashBtn.onclick = () => {
-            // Find current index instead of pre-calculating
-            const currentIndex = player.deck.indexOf(card);
-            if (currentIndex === -1) return;
-            if (!player.trash) player.trash = [];
-            player.trash.push(card);
-            player.deck.splice(currentIndex, 1);
-            window.renderTrash?.();
-            window.renderDecks?.();
-            removeDeckViewer();
-            addGameLog(`Card moved to ${player.name}'s trash`);
-        };
+            function mkSmBtn(text, bg) {
+                const b = document.createElement("button");
+                b.textContent = text;
+                b.style.cssText = `width:100%;padding:3px 2px;font-size:9px;background:${bg};color:#fff;border:none;border-radius:2px;cursor:pointer;white-space:nowrap;`;
+                return b;
+            }
 
-        cardButtons.appendChild(revealBtn);
-        cardButtons.appendChild(handBtn);
-        cardButtons.appendChild(bottomBtn);
-        cardButtons.appendChild(trashBtn);
+            const rBtn = mkSmBtn(card.faceUp ? "Hide" : "Reveal", "#2196F3");
+            rBtn.onclick = (e) => { e.stopPropagation(); card.faceUp = !card.faceUp; buildGrid(); };
 
-        cardFrame.appendChild(cardImg);
-        cardFrame.appendChild(cardButtons);
-        cardGrid.appendChild(cardFrame);
-    });
+            const hBtn = mkSmBtn("\u2192 Hand", "#FF9800");
+            hBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; player.hand.push(card); player.deck.splice(idx, 1); window.renderHands?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s hand`); };
+
+            const botBtn = mkSmBtn("\u2193 Bottom", "#9C27B0");
+            botBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; player.deck.splice(idx, 1); player.deck.unshift(card); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to bottom of ${player.name}'s deck`); };
+
+            const tBtn = mkSmBtn("\uD83D\uDDD1 Trash", "#F44336");
+            tBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; if (!player.trash) player.trash = []; player.trash.push(card); player.deck.splice(idx, 1); window.renderTrash?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s trash`); };
+
+            hoverPanel.appendChild(rBtn);
+            hoverPanel.appendChild(hBtn);
+            hoverPanel.appendChild(botBtn);
+            hoverPanel.appendChild(tBtn);
+
+            frame.addEventListener("mouseenter", () => { if (!dragSrcIndex && dragSrcIndex !== 0) hoverPanel.style.opacity = "1"; });
+            frame.addEventListener("mouseleave", () => { hoverPanel.style.opacity = "0"; });
+
+            frame.addEventListener("dragstart", (e) => {
+                dragSrcIndex = displayIndex;
+                hoverPanel.style.opacity = "0";
+                setTimeout(() => frame.style.opacity = "0.35", 0);
+                e.dataTransfer.effectAllowed = "move";
+            });
+            frame.addEventListener("dragend", () => {
+                frame.style.opacity = "1";
+                dragSrcIndex = null;
+                cardGrid.querySelectorAll(".dv-drag-over").forEach(el => {
+                    el.classList.remove("dv-drag-over");
+                    el.style.boxShadow = "";
+                    el.style.borderColor = "#555";
+                });
+            });
+            frame.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                cardGrid.querySelectorAll(".dv-drag-over").forEach(el => {
+                    el.classList.remove("dv-drag-over");
+                    el.style.boxShadow = "";
+                    el.style.borderColor = "#555";
+                });
+                frame.classList.add("dv-drag-over");
+                frame.style.boxShadow = "0 0 0 2px #FFD700";
+                frame.style.borderColor = "#FFD700";
+            });
+            frame.addEventListener("dragleave", () => {
+                frame.classList.remove("dv-drag-over");
+                frame.style.boxShadow = "";
+                frame.style.borderColor = "#555";
+            });
+            frame.addEventListener("drop", (e) => {
+                e.preventDefault();
+                if (dragSrcIndex === null || dragSrcIndex === displayIndex) return;
+                const d = [...player.deck].reverse();
+                const [moved] = d.splice(dragSrcIndex, 1);
+                d.splice(displayIndex, 0, moved);
+                player.deck = d.reverse();
+                window.renderDecks?.();
+                dragSrcIndex = null;
+                buildGrid();
+            });
+
+            frame.appendChild(img);
+            frame.appendChild(badge);
+            frame.appendChild(hoverPanel);
+            cardGrid.appendChild(frame);
+        });
+    }
+
+    buildGrid();
 
     const closeButton = document.createElement("button");
     closeButton.textContent = "Close";
-    closeButton.style.padding = "8px 16px";
-    closeButton.style.backgroundColor = "#666";
-    closeButton.style.color = "white";
-    closeButton.style.border = "none";
-    closeButton.style.cursor = "pointer";
-    closeButton.style.alignSelf = "flex-end";
+    closeButton.style.cssText = "padding:7px 18px;background:#555;color:#fff;border:none;cursor:pointer;align-self:flex-end;margin:8px;border-radius:4px;font-size:13px;";
     closeButton.onclick = removeDeckViewer;
 
     popup.appendChild(title);
     popup.appendChild(toolbar);
     popup.appendChild(cardGrid);
     popup.appendChild(closeButton);
-
     overlay.appendChild(popup);
-    overlay.onclick = (e) => {
-        if (e.target === overlay) removeDeckViewer();
-    };
-
+    overlay.onclick = (e) => { if (e.target === overlay) removeDeckViewer(); };
     document.body.appendChild(overlay);
 }
 
