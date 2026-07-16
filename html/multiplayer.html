@@ -3,75 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Cards Simulator - Multiplayer</title>
-
-    <link rel="icon" type="image/png" href="../images/basic/logo-without-title.png">
+    <title>Multiplayer – Custom Cards Sim</title>
+    <link rel="icon" type="image/svg+xml" href="../images/basic/custom-sim-logo.svg">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/multiplayer.css">
 </head>
 <body>
-    <main class="multiplayer-page">
-        <section class="multiplayer-card">
-            <h1>Multiplayer</h1>
-            <p class="subtitle">Create a room or join a friend using a room code.</p>
+    <a href="../index.html" class="mp-back-link">← Back</a>
 
-            <div class="connection-box">
-                <p id="connectionStatus">Connecting...</p>
-            </div>
+    <main class="mp-root">
 
-            <div class="room-actions">
-                <button id="createRoomBtn" class="primary-btn">
-                    Create Room
-                </button>
+        <!-- ══════════ VIEW: LANDING ══════════ -->
+        <section class="mp-view active" id="viewLanding">
+            <div class="mp-card">
+                <h1 class="mp-title">Multiplayer</h1>
 
-                <div class="divider">
-                    <span>or</span>
+                <div id="mpConnStatus" class="mp-status connecting">Connecting…</div>
+
+                <div class="mp-nickname-row">
+                    <label for="nicknameInput">Your nickname</label>
+                    <input id="nicknameInput" type="text" maxlength="20" placeholder="Enter nickname…">
                 </div>
 
-                <div class="join-box">
-                    <input 
-                        id="roomCodeInput" 
-                        type="text" 
-                        placeholder="Enter room code"
-                        maxlength="6"
-                    >
-
-                    <button id="joinRoomBtn" class="secondary-btn">
-                        Join Room
+                <div class="mp-landing-grid">
+                    <button class="mp-big-btn" id="btnBrowse">
+                        <span class="mp-big-icon">🌐</span>
+                        <span class="mp-big-label">Browse Public Lobbies</span>
+                        <span class="mp-big-sub">Find an open game to join</span>
+                    </button>
+                    <button class="mp-big-btn" id="btnCreate">
+                        <span class="mp-big-icon">✚</span>
+                        <span class="mp-big-label">Create Game</span>
+                        <span class="mp-big-sub">Host a public or private room</span>
                     </button>
                 </div>
+
+                <div class="mp-divider"><span>or join with a code</span></div>
+
+                <div class="mp-code-row">
+                    <input id="codeInput" type="text" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false">
+                    <button class="mp-btn-secondary" id="btnJoinCode">Join</button>
+                </div>
+
+                <div id="mpLandingError" class="mp-error hidden"></div>
             </div>
+        </section>
 
-            <div class="room-info">
-                <p id="roomStatus">No room created yet.</p>
-                <p id="roomCodeDisplay"></p>
+        <!-- ══════════ VIEW: LOBBY BROWSER ══════════ -->
+        <section class="mp-view" id="viewBrowser">
+            <div class="mp-card mp-card-wide">
+                <div class="mp-view-header">
+                    <button class="mp-back-btn" id="btnBackFromBrowser">←</button>
+                    <h2>Public Lobbies</h2>
+                </div>
+
+                <div id="browserList" class="browser-list">
+                    <div class="browser-empty">Looking for open games…</div>
+                </div>
+
+                <div id="mpBrowserError" class="mp-error hidden"></div>
             </div>
+        </section>
 
-            <div id="deckPicker" class="deck-picker hidden">
-                <label for="deckSelect">Choose Deck</label>
-                <select id="deckSelect"></select>
+        <!-- ══════════ VIEW: CREATE ROOM ══════════ -->
+        <section class="mp-view" id="viewCreate">
+            <div class="mp-card">
+                <div class="mp-view-header">
+                    <button class="mp-back-btn" id="btnBackFromCreate">←</button>
+                    <h2>Create Game</h2>
+                </div>
 
-                <button id="readyBtn" class="secondary-btn">
-                    Ready
-                </button>
+                <div class="mp-form">
+                    <label for="lobbyNameInput">Room name</label>
+                    <input id="lobbyNameInput" type="text" maxlength="32" placeholder="My Awesome Game">
 
-                <div class="ready-status">
-                    <span id="player1ReadyStatus">Player 1: Not ready</span>
-                    <span id="player2ReadyStatus">Player 2: Not ready</span>
+                    <div class="mp-toggle-row">
+                        <span>Public lobby</span>
+                        <label class="mp-toggle">
+                            <input type="checkbox" id="isPublicToggle" checked>
+                            <span class="mp-toggle-slider"></span>
+                        </label>
+                        <span id="publicToggleLabel" class="mp-toggle-hint">Anyone can join from the browser</span>
+                    </div>
+
+                    <label for="createDeckSelect">Your deck</label>
+                    <select id="createDeckSelect"></select>
+
+                    <button class="mp-btn-primary" id="btnConfirmCreate">Create Room</button>
+                    <div id="mpCreateError" class="mp-error hidden"></div>
                 </div>
             </div>
-
-            <button id="startMatchBtn" class="primary-btn hidden">
-                Start Match
-            </button>
-
-            <a href="../index.html" class="back-link">Back to Main Menu</a>
         </section>
+
+        <!-- ══════════ VIEW: ROOM LOBBY ══════════ -->
+        <section class="mp-view" id="viewLobby">
+            <div class="mp-card">
+                <div class="mp-view-header">
+                    <button class="mp-back-btn" id="btnBackFromLobby">← Leave</button>
+                    <h2 id="lobbyTitle">Room</h2>
+                </div>
+
+                <div id="lobbyCodeBox" class="lobby-code-box hidden">
+                    <span class="lobby-code-label">Room code — share with friend</span>
+                    <span id="lobbyCodeDisplay" class="lobby-code-value"></span>
+                    <button class="mp-btn-tiny" id="btnCopyCode">Copy</button>
+                </div>
+
+                <div class="lobby-players">
+                    <div class="lobby-player" id="lobbyP1">
+                        <span class="lobby-player-slot">P1</span>
+                        <span class="lobby-player-name">—</span>
+                        <span class="lobby-player-status waiting">Waiting…</span>
+                    </div>
+                    <div class="lobby-vs">VS</div>
+                    <div class="lobby-player" id="lobbyP2">
+                        <span class="lobby-player-slot">P2</span>
+                        <span class="lobby-player-name">—</span>
+                        <span class="lobby-player-status waiting">Waiting…</span>
+                    </div>
+                </div>
+
+                <div class="mp-form">
+                    <label for="lobbyDeckSelect">Choose your deck</label>
+                    <select id="lobbyDeckSelect"></select>
+
+                    <button class="mp-btn-primary" id="btnReady">Ready Up</button>
+                    <button class="mp-btn-primary hidden" id="btnStart">Start Match</button>
+                    <div id="mpLobbyMsg" class="mp-info"></div>
+                    <div id="mpLobbyError" class="mp-error hidden"></div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script src="../js/cards/cardDatabase.js?v=ry-ichigo-1"></script>
     <script src="../js/cards/decks.js?v=ry-ichigo-1"></script>
     <script src="../js/core/deckParser.js"></script>
-    <script type="module" src="../js/pages/multiplayer.js"></script>
+    <script type="module" src="../js/pages/multiplayer.js?v=lobby-2"></script>
 </body>
 </html>

@@ -284,7 +284,7 @@ const manualPlay = {
             if (handCard) return;
             
             const boardCard = e.target.closest(".board-card-img");
-            if (boardCard) return;
+            if (boardCard && !e.target.closest("[data-card-source='life']")) return;
             
             const lifeCard = e.target.closest("[data-card-source='life']");
             if (lifeCard) {
@@ -321,6 +321,23 @@ const manualPlay = {
         let selectedDonCard = null;  // Track which DON card is selected
         let selectedDonPlayer = null;
         
+        // Right-click a DON card to remove 1 from active count
+        document.addEventListener("contextmenu", (e) => {
+            if (!e.target || typeof e.target.closest !== "function") return;
+            const donCard = e.target.closest(".don-card-img.selectable-don");
+            if (!donCard) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const playerKey = donCard.getAttribute("data-player");
+            const player = gameState[playerKey];
+            if (!player || player.don < 1) return;
+            player.don -= 1;
+            window.updateDonDisplay?.();
+            window.renderLeaders?.();
+            window.renderCharacters?.();
+            console.log("✓ DON removed via right-click, now:", player.don);
+        }, true);
+
         // Click a DON card to select it
         document.addEventListener("click", (e) => {
             if (!e.target || typeof e.target.closest !== "function") return;
@@ -405,6 +422,45 @@ const manualPlay = {
             selectedDonPlayer = null;
         }, true);
         
+        // Click a life card to select it (blue outline, same as DON cards)
+        let selectedLifeCard = null;
+
+        document.addEventListener("click", (e) => {
+            if (!e.target || typeof e.target.closest !== "function") return;
+            const lifeCard = e.target.closest(".life-card");
+
+            // Clear previous selection
+            if (selectedLifeCard && selectedLifeCard !== lifeCard) {
+                selectedLifeCard.style.outline = "";
+                selectedLifeCard.style.boxShadow = "";
+                selectedLifeCard = null;
+            }
+
+            if (!lifeCard) return;
+
+            // Toggle selection
+            if (selectedLifeCard === lifeCard) {
+                lifeCard.style.outline = "";
+                lifeCard.style.boxShadow = "";
+                selectedLifeCard = null;
+                console.log("✓ Life card deselected");
+            } else {
+                lifeCard.style.outline = "2px solid rgba(79, 172, 254, 0.8)";
+                lifeCard.style.boxShadow = "0 0 12px rgba(79, 172, 254, 0.95)";
+                selectedLifeCard = lifeCard;
+                console.log("✓ Life card selected");
+            }
+        }, true);
+
+        // Clear life card selection on dragstart so outline doesn't linger
+        document.addEventListener("dragstart", (e) => {
+            if (selectedLifeCard) {
+                selectedLifeCard.style.outline = "";
+                selectedLifeCard.style.boxShadow = "";
+                selectedLifeCard = null;
+            }
+        });
+
         // dragover - allow zones for regular cards and show life zone split
         document.addEventListener("dragover", (e) => {
             if (!e.target || typeof e.target.closest !== "function") return;
@@ -1051,6 +1107,7 @@ const manualPlay = {
         
         // Prevent text selection on hand cards without blocking drag
         document.addEventListener("selectstart", (e) => {
+            if (!e.target || typeof e.target.closest !== "function") return;
             const handCard = e.target.closest(".hand-card");
             if (handCard) {
                 e.preventDefault();
@@ -1088,18 +1145,95 @@ const manualPlay = {
         }
     },
 
+    _cardCenter(el) {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    },
+
+    _getArrowSvg() {
+        let svg = document.getElementById("arrow-overlay-svg");
+        if (!svg) {
+            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.id = "arrow-overlay-svg";
+            svg.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9000;";
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            marker.id = "arrowhead";
+            marker.setAttribute("markerWidth", "10");
+            marker.setAttribute("markerHeight", "7");
+            marker.setAttribute("refX", "9");
+            marker.setAttribute("refY", "3.5");
+            marker.setAttribute("orient", "auto");
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            poly.setAttribute("points", "0 0, 10 3.5, 0 7");
+            poly.setAttribute("fill", "#ff3333");
+            marker.appendChild(poly);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            document.body.appendChild(svg);
+        }
+        return svg;
+    },
+
     toggleArrowMode() {
         this.state.arrowMode = !this.state.arrowMode;
+        this.state.arrowFirst = null;
         const btn = document.getElementById("drawArrowTool");
-        if (btn) {
-            btn.style.background = this.state.arrowMode ? "#4a90e2" : "#f5a623";
+
+        document.querySelectorAll(".arrow-selectable, .arrow-selected-first").forEach(el => {
+            el.classList.remove("arrow-selectable", "arrow-selected-first");
+        });
+
+        if (this.state.arrowMode) {
+            if (btn) { btn.textContent = "→ Click 2 cards…"; btn.style.background = "#4a90e2"; }
+            document.querySelectorAll(".board-leader-card, .board-character-card, .board-stage-card").forEach(el => {
+                el.classList.add("arrow-selectable");
+            });
+            this._arrowClickHandler = (e) => {
+                const card = e.target.closest(".arrow-selectable, .arrow-selected-first");
+                if (!card) return;
+                e.stopPropagation();
+                if (!this.state.arrowFirst) {
+                    this.state.arrowFirst = card;
+                    card.classList.add("arrow-selected-first");
+                    if (btn) btn.textContent = "→ Click 2nd card…";
+                } else {
+                    if (card === this.state.arrowFirst) return;
+                    const a = this._cardCenter(this.state.arrowFirst);
+                    const b = this._cardCenter(card);
+                    const svg = this._getArrowSvg();
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+                    line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+                    line.setAttribute("stroke", "#ff3333");
+                    line.setAttribute("stroke-width", "3");
+                    line.setAttribute("marker-end", "url(#arrowhead)");
+                    line.classList.add("drawn-arrow");
+                    svg.appendChild(line);
+                    this.state.arrowFirst.classList.remove("arrow-selected-first");
+                    this.state.arrowFirst = null;
+                    if (btn) btn.textContent = "→ Click 2 cards…";
+                }
+            };
+            document.addEventListener("click", this._arrowClickHandler, true);
+        } else {
+            if (btn) { btn.textContent = "→ Draw Arrow"; btn.style.background = ""; }
+            if (this._arrowClickHandler) {
+                document.removeEventListener("click", this._arrowClickHandler, true);
+                this._arrowClickHandler = null;
+            }
         }
-        console.log("Arrow mode:", this.state.arrowMode);
     },
 
     resetArrows() {
-        this.state.arrows = [];
-        console.log("Arrows reset");
+        const svg = document.getElementById("arrow-overlay-svg");
+        if (svg) svg.querySelectorAll(".drawn-arrow").forEach(l => l.remove());
+        this.state.arrowFirst = null;
+        document.querySelectorAll(".arrow-selected-first").forEach(el => el.classList.remove("arrow-selected-first"));
+        if (this.state.arrowMode) {
+            const btn = document.getElementById("drawArrowTool");
+            if (btn) btn.textContent = "→ Click 2 cards…";
+        }
     },
 
     restandAllCards() {
@@ -1145,20 +1279,113 @@ const manualPlay = {
     toggleNoteMode() {
         this.state.noteMode = !this.state.noteMode;
         const btn = document.getElementById("addNoteTool");
-        if (btn) {
-            btn.style.background = this.state.noteMode ? "#4a90e2" : "#f5a623";
+
+        document.querySelectorAll(".note-selectable").forEach(el => el.classList.remove("note-selectable"));
+
+        if (this.state.noteMode) {
+            if (btn) { btn.textContent = "✎ Click a card"; btn.style.background = "#4a90e2"; }
+            document.querySelectorAll(".board-leader-card, .board-character-card, .board-stage-card").forEach(el => {
+                el.classList.add("note-selectable");
+            });
+            this._noteClickHandler = (e) => {
+                const card = e.target.closest(".note-selectable");
+                if (!card) return;
+                e.stopPropagation();
+                e.preventDefault();
+
+                // Exit note mode
+                this.state.noteMode = false;
+                document.querySelectorAll(".note-selectable").forEach(el => el.classList.remove("note-selectable"));
+                if (btn) { btn.textContent = "✎ Add Note"; btn.style.background = ""; }
+                document.removeEventListener("click", this._noteClickHandler, true);
+                this._noteClickHandler = null;
+
+                // Remove any existing popup
+                document.getElementById("note-popup")?.remove();
+
+                const popup = document.createElement("div");
+                popup.id = "note-popup";
+                popup.style.cssText = "position:fixed;z-index:10100;background:rgba(20,20,20,0.97);border:1px solid #666;border-radius:6px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:flex;flex-direction:column;gap:8px;min-width:220px;";
+                const rect = card.getBoundingClientRect();
+                const top = Math.min(rect.bottom + 8, window.innerHeight - 180);
+                popup.style.top = top + "px";
+                popup.style.left = Math.max(4, rect.left) + "px";
+
+                const lbl = document.createElement("div");
+                lbl.textContent = "Note text";
+                lbl.style.cssText = "color:#aaa;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;";
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.placeholder = "Enter note…";
+                input.style.cssText = "background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:6px 8px;font-size:13px;width:100%;box-sizing:border-box;outline:none;";
+
+                const colorRow = document.createElement("div");
+                colorRow.style.cssText = "display:flex;align-items:center;gap:8px;";
+                const colorLbl = document.createElement("label");
+                colorLbl.textContent = "Text color:";
+                colorLbl.style.cssText = "color:#aaa;font-size:12px;";
+                const colorPick = document.createElement("input");
+                colorPick.type = "color";
+                colorPick.value = "#ffffff";
+                colorPick.style.cssText = "width:34px;height:26px;border:none;background:none;cursor:pointer;padding:0;border-radius:3px;";
+                colorRow.appendChild(colorLbl);
+                colorRow.appendChild(colorPick);
+
+                const btnRow = document.createElement("div");
+                btnRow.style.cssText = "display:flex;gap:8px;";
+                const okBtn = document.createElement("button");
+                okBtn.textContent = "Add";
+                okBtn.style.cssText = "flex:1;padding:6px;background:#4a90e2;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;";
+                const cancelBtn = document.createElement("button");
+                cancelBtn.textContent = "Cancel";
+                cancelBtn.style.cssText = "flex:1;padding:6px;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;";
+                btnRow.appendChild(okBtn);
+                btnRow.appendChild(cancelBtn);
+
+                popup.appendChild(lbl);
+                popup.appendChild(input);
+                popup.appendChild(colorRow);
+                popup.appendChild(btnRow);
+                document.body.appendChild(popup);
+                setTimeout(() => input.focus(), 50);
+
+                const applyNote = () => {
+                    const text = input.value.trim();
+                    popup.remove();
+                    if (!text) return;
+                    const color = colorPick.value;
+                    const container = card.closest(".leader-area, .character-slot, .stage-area") || card.parentElement;
+                    container.querySelectorAll(".card-note-overlay").forEach(n => n.remove());
+                    const overlay = document.createElement("div");
+                    overlay.className = "card-note-overlay";
+                    overlay.textContent = text;
+                    overlay.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:800;padding:4px;pointer-events:none;z-index:50;word-break:break-word;line-height:1.3;text-shadow:1px 1px 4px rgba(0,0,0,1),-1px -1px 4px rgba(0,0,0,1),1px -1px 4px rgba(0,0,0,1),-1px 1px 4px rgba(0,0,0,1);";
+                    overlay.style.color = color;
+                    if (getComputedStyle(container).position === "static") container.style.position = "relative";
+                    container.appendChild(overlay);
+                };
+
+                okBtn.onclick = applyNote;
+                cancelBtn.onclick = () => popup.remove();
+                input.addEventListener("keydown", ev => {
+                    if (ev.key === "Enter") applyNote();
+                    if (ev.key === "Escape") popup.remove();
+                });
+            };
+            document.addEventListener("click", this._noteClickHandler, true);
+        } else {
+            if (btn) { btn.textContent = "✎ Add Note"; btn.style.background = ""; }
+            if (this._noteClickHandler) {
+                document.removeEventListener("click", this._noteClickHandler, true);
+                this._noteClickHandler = null;
+            }
         }
-        console.log("Note mode:", this.state.noteMode);
     },
 
     clearAllNotes() {
         this.state.notes = {};
-        document.querySelectorAll(".card-note").forEach(note => note.remove());
-        console.log("All notes cleared");
-    },
-
-    undo() {
-        console.log("Undo (not yet implemented)");
+        document.querySelectorAll(".card-note, .card-note-overlay").forEach(n => n.remove());
     }
 };
 

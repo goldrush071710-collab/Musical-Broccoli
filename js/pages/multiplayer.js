@@ -1,237 +1,368 @@
-import {
-    signInGuest,
-    waitForUser
-} from "../firebase/firebaseApp.js";
-
+import { signInGuest, waitForUser } from "../firebase/firebaseApp.js";
 import {
     createRoom,
     joinRoom,
     subscribeToMatch,
     startMatch,
     setPlayerDeck,
-    setPlayerReady
+    setPlayerReady,
+    listPublicLobbies
 } from "../firebase/multiplayerService.js";
 
-const connectionStatus = document.getElementById("connectionStatus");
-const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomBtn = document.getElementById("joinRoomBtn");
-const roomCodeInput = document.getElementById("roomCodeInput");
-const roomStatus = document.getElementById("roomStatus");
-const roomCodeDisplay = document.getElementById("roomCodeDisplay");
-const deckPicker = document.getElementById("deckPicker");
-const deckSelect = document.getElementById("deckSelect");
-const readyBtn = document.getElementById("readyBtn");
-const player1ReadyStatus = document.getElementById("player1ReadyStatus");
-const player2ReadyStatus = document.getElementById("player2ReadyStatus");
-const startMatchBtn = document.getElementById("startMatchBtn");
-
+// ── State ────────────────────────────────────────────
 let currentUser = null;
 let currentRoomCode = null;
+let playerSlot = null;        // "p1" | "p2"
 let unsubscribeMatch = null;
-let playerSlot = null;
+let unsubscribeLobbies = null;
+let isReady = false;
 
-const requiredElements = {
-    connectionStatus,
-    createRoomBtn,
-    joinRoomBtn,
-    roomCodeInput,
-    roomStatus,
-    roomCodeDisplay,
-    deckPicker,
-    deckSelect,
-    readyBtn,
-    player1ReadyStatus,
-    player2ReadyStatus,
-    startMatchBtn
+// ── Nickname (persisted) ─────────────────────────────
+function getNickname() {
+    return localStorage.getItem("mp_nickname") || "";
+}
+function saveNickname(v) {
+    localStorage.setItem("mp_nickname", v.trim());
+}
+
+// ── DOM refs ─────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// Views
+const views = {
+    landing: $("viewLanding"),
+    browser: $("viewBrowser"),
+    create:  $("viewCreate"),
+    lobby:   $("viewLobby"),
 };
 
-for (const [name, element] of Object.entries(requiredElements)) {
-    if (!element) {
-        console.error(`Missing HTML element: ${name}`);
-    } else {
-        console.log(`Found HTML element: ${name}`);
-    }
+function showView(name) {
+    Object.values(views).forEach(v => v.classList.remove("active"));
+    views[name].classList.add("active");
 }
 
-async function initMultiplayerPage() {
-    try {
-        setButtonsDisabled(true);
-        connectionStatus.textContent = "Connecting to multiplayer server...";
+// Landing
+const mpConnStatus   = $("mpConnStatus");
+const nicknameInput  = $("nicknameInput");
+const btnBrowse      = $("btnBrowse");
+const btnCreate      = $("btnCreate");
+const codeInput      = $("codeInput");
+const btnJoinCode    = $("btnJoinCode");
+const mpLandingError = $("mpLandingError");
 
-        await loadCardDatabase();
-        populateDeckPicker();
+// Browser
+const browserList      = $("browserList");
+const btnBackFromBrowser = $("btnBackFromBrowser");
+const mpBrowserError   = $("mpBrowserError");
 
-        await signInGuest();
+// Create
+const lobbyNameInput    = $("lobbyNameInput");
+const isPublicToggle    = $("isPublicToggle");
+const publicToggleLabel = $("publicToggleLabel");
+const createDeckSelect  = $("createDeckSelect");
+const btnConfirmCreate  = $("btnConfirmCreate");
+const btnBackFromCreate = $("btnBackFromCreate");
+const mpCreateError     = $("mpCreateError");
 
-        currentUser = await waitForUser();
+// Lobby
+const lobbyTitle       = $("lobbyTitle");
+const lobbyCodeBox     = $("lobbyCodeBox");
+const lobbyCodeDisplay = $("lobbyCodeDisplay");
+const btnCopyCode      = $("btnCopyCode");
+const lobbyDeckSelect  = $("lobbyDeckSelect");
+const btnReady         = $("btnReady");
+const btnStart         = $("btnStart");
+const mpLobbyMsg       = $("mpLobbyMsg");
+const mpLobbyError     = $("mpLobbyError");
+const btnBackFromLobby = $("btnBackFromLobby");
+const lobbyP1          = $("lobbyP1");
+const lobbyP2          = $("lobbyP2");
 
-        connectionStatus.textContent = "Connected as guest player.";
-        setButtonsDisabled(false);
-    } catch (error) {
-        connectionStatus.textContent = "Could not connect to multiplayer.";
-        roomStatus.textContent = error.message;
-    }
+// ── Helpers ───────────────────────────────────────────
+function showError(el, msg) {
+    el.textContent = msg;
+    el.classList.remove("hidden");
+}
+function clearError(el) {
+    el.textContent = "";
+    el.classList.add("hidden");
+}
+function setStatus(text, cls) {
+    mpConnStatus.textContent = text;
+    mpConnStatus.className = "mp-status " + cls;
 }
 
-function populateDeckPicker() {
+function populateDecks(select) {
     const decks = window.getAvailableDecks?.() || [];
-
-    deckSelect.innerHTML = "";
-
+    select.innerHTML = "";
+    if (decks.length === 0) {
+        const o = document.createElement("option");
+        o.textContent = "No decks saved";
+        select.appendChild(o);
+        return;
+    }
     decks.forEach(deck => {
-        const option = document.createElement("option");
-
-        option.value = deck.id;
-        option.textContent = deck.name;
-
-        deckSelect.appendChild(option);
+        const o = document.createElement("option");
+        o.value = deck.id;
+        o.textContent = deck.name;
+        select.appendChild(o);
     });
 }
 
-function setButtonsDisabled(disabled) {
-    createRoomBtn.disabled = disabled;
-    joinRoomBtn.disabled = disabled;
+function updateLobbyPlayerUI(slotEl, name, ready) {
+    slotEl.querySelector(".lobby-player-name").textContent = name || "—";
+    const statusEl = slotEl.querySelector(".lobby-player-status");
+    if (!name) {
+        statusEl.textContent = "Waiting…";
+        statusEl.className = "lobby-player-status waiting";
+    } else if (ready) {
+        statusEl.textContent = "Ready ✓";
+        statusEl.className = "lobby-player-status ready";
+    } else {
+        statusEl.textContent = "Not ready";
+        statusEl.className = "lobby-player-status waiting";
+    }
 }
 
-createRoomBtn.addEventListener("click", async () => {
-    console.log("Create room button clicked");
+// ── Lobby browser ─────────────────────────────────────
+function startBrowsing() {
+    clearError(mpBrowserError);
+    if (unsubscribeLobbies) { unsubscribeLobbies(); unsubscribeLobbies = null; }
+
+    unsubscribeLobbies = listPublicLobbies(lobbies => {
+        browserList.innerHTML = "";
+        if (lobbies.length === 0) {
+            browserList.innerHTML = '<div class="browser-empty">No open games right now — be the first to create one!</div>';
+            return;
+        }
+        lobbies.forEach(lobby => {
+            const row = document.createElement("div");
+            row.className = "browser-row";
+            row.innerHTML = `
+                <div class="browser-row-info">
+                    <div class="browser-row-name">${escapeHtml(lobby.name)}</div>
+                    <div class="browser-row-host">Host: ${escapeHtml(lobby.host)}</div>
+                </div>
+                <button class="browser-row-join" data-code="${lobby.code}">Join</button>`;
+            row.querySelector(".browser-row-join").addEventListener("click", () => {
+                joinWithCode(lobby.code);
+            });
+            browserList.appendChild(row);
+        });
+    });
+}
+
+function stopBrowsing() {
+    if (unsubscribeLobbies) { unsubscribeLobbies(); unsubscribeLobbies = null; }
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── Join helpers ──────────────────────────────────────
+async function joinWithCode(code) {
+    clearError(mpBrowserError);
+    clearError(mpLandingError);
+    if (!currentUser) { showError(mpLandingError, "Not connected yet — wait a moment."); return; }
+    const nickname = getNickname() || "Player 2";
+    try {
+        stopBrowsing();
+        currentRoomCode = await joinRoom(code, currentUser, nickname);
+        playerSlot = "p2";
+        openLobbyView();
+    } catch (e) {
+        showError(mpBrowserError, e.message);
+        showError(mpLandingError, e.message);
+        startBrowsing();
+    }
+}
+
+// ── Lobby view ────────────────────────────────────────
+function openLobbyView() {
+    populateDecks(lobbyDeckSelect);
+    clearError(mpLobbyError);
+    mpLobbyMsg.textContent = "Choose your deck and ready up.";
+    isReady = false;
+    btnReady.disabled = false;
+    btnReady.textContent = "Ready Up";
+    btnStart.classList.add("hidden");
+
+    // Show code box only for host (p1) and only if private
+    lobbyCodeBox.classList.add("hidden");
+    if (playerSlot === "p1") {
+        lobbyCodeDisplay.textContent = currentRoomCode;
+        lobbyTitle.textContent = "Your Room";
+        // We'll determine public/private from match data when it loads
+    } else {
+        lobbyTitle.textContent = "Room — " + currentRoomCode;
+    }
+
+    // Subscribe to match updates
+    if (unsubscribeMatch) { unsubscribeMatch(); }
+    unsubscribeMatch = subscribeToMatch(currentRoomCode, handleMatchUpdate);
+
+    showView("lobby");
+}
+
+function handleMatchUpdate(match) {
+    if (!match) return;
+
+    const p1 = match.players?.p1;
+    const p2 = match.players?.p2;
+
+    updateLobbyPlayerUI(lobbyP1, p1?.name, p1?.ready);
+    updateLobbyPlayerUI(lobbyP2, p2?.name, p2?.ready);
+
+    // Show code box for host if room is private
+    if (playerSlot === "p1" && match.isPublic === false) {
+        lobbyCodeBox.classList.remove("hidden");
+    } else if (playerSlot === "p1" && match.isPublic) {
+        lobbyCodeBox.classList.add("hidden");
+    }
+
+    // Always show code for private rooms (even for p2 to reshare)
+    if (!match.isPublic) {
+        lobbyCodeBox.classList.remove("hidden");
+        lobbyCodeDisplay.textContent = currentRoomCode;
+    }
+
+    const bothReady = p1?.ready && p2?.ready;
+
+    if (match.status === "started") {
+        // Match has started — redirect to game
+        if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
+        const url = `../html/self.html?mode=online&room=${currentRoomCode}&player=${playerSlot}`;
+        window.location.href = url;
+        return;
+    }
+
+    // Show start button to host if both ready
+    if (playerSlot === "p1" && bothReady) {
+        btnStart.classList.remove("hidden");
+        mpLobbyMsg.textContent = "Both players ready! You can start the match.";
+    } else if (bothReady) {
+        mpLobbyMsg.textContent = "Both ready — waiting for host to start.";
+    } else if (!p2) {
+        mpLobbyMsg.textContent = "Waiting for opponent to join…";
+    } else {
+        mpLobbyMsg.textContent = "Waiting for both players to ready up.";
+    }
+}
+
+// ── Init ──────────────────────────────────────────────
+async function init() {
+    // Load cards
+    if (typeof loadCardDatabase === "function") await loadCardDatabase().catch(() => {});
+    populateDecks(createDeckSelect);
+    populateDecks(lobbyDeckSelect);
+
+    // Restore nickname
+    const saved = getNickname();
+    if (saved) nicknameInput.value = saved;
+
+    // Firebase auth
+    try {
+        setStatus("Connecting…", "connecting");
+        await signInGuest();
+        currentUser = await waitForUser();
+        setStatus("Connected", "connected");
+    } catch (e) {
+        setStatus("Connection failed", "error");
+    }
+}
+
+// ── Event listeners ───────────────────────────────────
+
+nicknameInput.addEventListener("input", () => saveNickname(nicknameInput.value));
+
+isPublicToggle.addEventListener("change", () => {
+    publicToggleLabel.textContent = isPublicToggle.checked
+        ? "Anyone can join from the browser"
+        : "Only joinable with the room code";
+});
+
+// Landing → browse
+btnBrowse.addEventListener("click", () => {
+    clearError(mpLandingError);
+    showView("browser");
+    startBrowsing();
+});
+
+btnBackFromBrowser.addEventListener("click", () => {
+    stopBrowsing();
+    showView("landing");
+});
+
+// Landing → create
+btnCreate.addEventListener("click", () => {
+    clearError(mpLandingError);
+    const nick = getNickname() || "Player";
+    lobbyNameInput.value = nick + "'s Game";
+    populateDecks(createDeckSelect);
+    showView("create");
+});
+
+btnBackFromCreate.addEventListener("click", () => showView("landing"));
+
+// Landing → join by code
+btnJoinCode.addEventListener("click", async () => {
+    const code = codeInput.value.trim().toUpperCase();
+    if (!code) { showError(mpLandingError, "Enter a room code first."); return; }
+    await joinWithCode(code);
+});
+
+codeInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") btnJoinCode.click();
+});
+
+// Create room
+btnConfirmCreate.addEventListener("click", async () => {
+    clearError(mpCreateError);
+    if (!currentUser) { showError(mpCreateError, "Not connected yet."); return; }
+
+    const nickname = getNickname() || "Player 1";
+    const lobbyName = lobbyNameInput.value.trim() || nickname + "'s Game";
+    const isPublic  = isPublicToggle.checked;
+
+    btnConfirmCreate.disabled = true;
+    btnConfirmCreate.textContent = "Creating…";
 
     try {
-        setButtonsDisabled(true);
-
-        currentRoomCode = await createRoom(currentUser);
+        currentRoomCode = await createRoom(currentUser, { isPublic, lobbyName, nickname });
         playerSlot = "p1";
 
-        console.log("Room created:", currentRoomCode);
-
-        roomStatus.textContent = "Room created. Waiting for Player 2...";
-        roomCodeDisplay.textContent = currentRoomCode;
-        deckPicker.classList.remove("hidden");
-        readyBtn.disabled = false;
-
-        subscribeToCurrentRoom();
-    } catch (error) {
-        console.error("Create room error:", error);
-        roomStatus.textContent = error.message;
-        setButtonsDisabled(false);
+        // Save selected deck ready for ready-up
+        openLobbyView();
+    } catch (e) {
+        showError(mpCreateError, e.message);
+    } finally {
+        btnConfirmCreate.disabled = false;
+        btnConfirmCreate.textContent = "Create Room";
     }
 });
 
-joinRoomBtn.addEventListener("click", async () => {
-    try {
-        const enteredCode = roomCodeInput.value;
-
-        if (!enteredCode.trim()) {
-            roomStatus.textContent = "Enter a room code first.";
-            return;
-        }
-
-        setButtonsDisabled(true);
-
-        currentRoomCode = await joinRoom(enteredCode, currentUser);
-        playerSlot = "p2";
-
-        roomStatus.textContent = "Joined room.";
-        roomCodeDisplay.textContent = currentRoomCode;
-        deckPicker.classList.remove("hidden");
-        readyBtn.disabled = false;
-
-        subscribeToCurrentRoom();
-    } catch (error) {
-        roomStatus.textContent = error.message;
-        setButtonsDisabled(false);
-    }
-});
-
-function subscribeToCurrentRoom() {
-    if (unsubscribeMatch) {
-        unsubscribeMatch();
-    }
-
-    unsubscribeMatch = subscribeToMatch(currentRoomCode, (match) => {
-        if (!match) {
-            roomStatus.textContent = "Room no longer exists.";
-            return;
-        }
-
-        updateRoomUI(match);
+// Lobby — copy code
+btnCopyCode.addEventListener("click", () => {
+    navigator.clipboard?.writeText(currentRoomCode).then(() => {
+        btnCopyCode.textContent = "Copied!";
+        setTimeout(() => { btnCopyCode.textContent = "Copy"; }, 1800);
     });
-}
-
-function updateRoomUI(match) {
-    if (match.status === "started") {
-        goToMatchPage();
-        return;
-    }
-
-    const hasPlayer1 = Boolean(match.players?.p1);
-    const hasPlayer2 = Boolean(match.players?.p2);
-    const player1Ready = Boolean(match.players?.p1?.ready);
-    const player2Ready = Boolean(match.players?.p2?.ready);
-
-    player1ReadyStatus.textContent = `Player 1: ${player1Ready ? "Ready" : "Not ready"}`;
-    player2ReadyStatus.textContent = `Player 2: ${player2Ready ? "Ready" : "Not ready"}`;
-
-    if (hasPlayer1 && !hasPlayer2) {
-        roomStatus.textContent = "Waiting for Player 2...";
-    }
-
-    if (hasPlayer1 && hasPlayer2) {
-        roomStatus.textContent = player1Ready && player2Ready
-            ? "Both players ready. Player 1 can start."
-            : "Both players connected. Choose decks and ready up.";
-
-        if (playerSlot === "p1") {
-            startMatchBtn.classList.remove("hidden");
-            startMatchBtn.disabled = !(player1Ready && player2Ready);
-        }
-    }
-}
-
-function goToMatchPage() {
-    if (!currentRoomCode || !playerSlot) {
-        roomStatus.textContent = "Missing room or player data.";
-        return;
-    }
-
-    window.location.href = `self.html?mode=online&room=${currentRoomCode}&player=${playerSlot}`;
-}
-
-startMatchBtn.addEventListener("click", async () => {
-    try {
-        if (!currentRoomCode) {
-            roomStatus.textContent = "No room code found.";
-            return;
-        }
-
-        roomStatus.textContent = "Starting match...";
-        startMatchBtn.disabled = true;
-
-        await startMatch(currentRoomCode);
-    } catch (error) {
-        console.error("Start match error:", error);
-        roomStatus.textContent = error.message;
-        startMatchBtn.disabled = false;
-    }
 });
 
-readyBtn.addEventListener("click", async () => {
+// Lobby — ready up
+btnReady.addEventListener("click", async () => {
+    clearError(mpLobbyError);
+    if (!currentRoomCode || !currentUser) { showError(mpLobbyError, "Not in a room."); return; }
+
+    const selectedDeck = window.getDeckById?.(lobbyDeckSelect.value);
+    if (!selectedDeck) { showError(mpLobbyError, "Choose a deck first."); return; }
+
+    btnReady.disabled = true;
+    btnReady.textContent = "Saving…";
+    isReady = true;
+
     try {
-        if (!currentRoomCode || !currentUser) {
-            roomStatus.textContent = "Join or create a room first.";
-            return;
-        }
-
-        const selectedDeck = window.getDeckById?.(deckSelect.value);
-
-        if (!selectedDeck) {
-            roomStatus.textContent = "Choose a deck first.";
-            return;
-        }
-
-        readyBtn.disabled = true;
-        roomStatus.textContent = "Saving deck...";
-
         await setPlayerDeck(currentRoomCode, currentUser.uid, {
             id: selectedDeck.id,
             name: selectedDeck.name,
@@ -239,13 +370,39 @@ readyBtn.addEventListener("click", async () => {
             deckText: selectedDeck.deckText
         });
         await setPlayerReady(currentRoomCode, currentUser.uid, true);
-
-        roomStatus.textContent = "Ready. Waiting for opponent.";
-    } catch (error) {
-        console.error("Ready error:", error);
-        roomStatus.textContent = error.message;
-        readyBtn.disabled = false;
+        btnReady.textContent = "Ready ✓";
+        mpLobbyMsg.textContent = "You're ready — waiting for opponent.";
+    } catch (e) {
+        showError(mpLobbyError, e.message);
+        btnReady.disabled = false;
+        btnReady.textContent = "Ready Up";
+        isReady = false;
     }
 });
 
-initMultiplayerPage();
+// Lobby — start match (host only)
+btnStart.addEventListener("click", async () => {
+    clearError(mpLobbyError);
+    btnStart.disabled = true;
+    btnStart.textContent = "Starting…";
+    try {
+        await startMatch(currentRoomCode);
+        // Redirect handled by handleMatchUpdate when status === "started"
+    } catch (e) {
+        showError(mpLobbyError, e.message);
+        btnStart.disabled = false;
+        btnStart.textContent = "Start Match";
+    }
+});
+
+// Lobby — leave
+btnBackFromLobby.addEventListener("click", () => {
+    if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
+    currentRoomCode = null;
+    playerSlot = null;
+    isReady = false;
+    showView("landing");
+});
+
+// ── Bootstrap ─────────────────────────────────────────
+init();

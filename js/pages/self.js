@@ -2678,6 +2678,103 @@ function renderPlayerHand(player, handElementId, hidden) {
             img.className = "hand-card-img";
 
             cardElement.appendChild(img);
+
+            // Right-click context menu for hand cards
+            cardElement.addEventListener("contextmenu", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                document.querySelectorAll(".context-menu").forEach(m => m.parentNode && m.parentNode.removeChild(m));
+
+                const menu = document.createElement("div");
+                menu.className = "context-menu";
+                menu.style.position = "fixed";
+                menu.style.top = event.clientY + "px";
+                menu.style.left = event.clientX + "px";
+                menu.style.zIndex = "10001";
+                menu.style.backgroundColor = "rgba(30, 30, 30, 0.95)";
+                menu.style.border = "1px solid #888";
+                menu.style.borderRadius = "4px";
+                menu.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.5)";
+
+                const options = [
+                    {
+                        label: "Send to Trash",
+                        action: () => {
+                            const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+                            if (cardIndex === -1) return;
+                            const [removed] = player.hand.splice(cardIndex, 1);
+                            if (!player.trash) player.trash = [];
+                            player.trash.push(removed);
+                            renderHands();
+                            renderTrash();
+                            addGameLog(`${removed.name} sent to trash from hand.`);
+                        }
+                    },
+                    {
+                        label: "Send to Top Deck",
+                        action: () => {
+                            const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+                            if (cardIndex === -1) return;
+                            const [removed] = player.hand.splice(cardIndex, 1);
+                            player.deck.push(removed);
+                            renderHands();
+                            renderDecks();
+                            addGameLog(`${removed.name} sent to top of deck from hand.`);
+                        }
+                    },
+                    {
+                        label: "Send to Bottom Deck",
+                        action: () => {
+                            const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+                            if (cardIndex === -1) return;
+                            const [removed] = player.hand.splice(cardIndex, 1);
+                            player.deck.unshift(removed);
+                            renderHands();
+                            renderDecks();
+                            addGameLog(`${removed.name} sent to bottom of deck from hand.`);
+                        }
+                    },
+                    {
+                        label: "Send to Top Life",
+                        action: () => {
+                            const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+                            if (cardIndex === -1) return;
+                            const [removed] = player.hand.splice(cardIndex, 1);
+                            removed.faceUp = false;
+                            player.life.unshift(removed);
+                            renderHands();
+                            renderLifeCards();
+                            addGameLog(`${removed.name} sent to top of life from hand.`);
+                        }
+                    }
+                ];
+
+                options.forEach(opt => {
+                    const btn = document.createElement("div");
+                    btn.textContent = opt.label;
+                    btn.style.padding = "8px 16px";
+                    btn.style.cursor = "pointer";
+                    btn.style.color = "#fff";
+                    btn.style.borderBottom = "1px solid #555";
+                    btn.style.fontSize = "14px";
+                    btn.onmouseenter = () => btn.style.backgroundColor = "rgba(100, 150, 255, 0.3)";
+                    btn.onmouseleave = () => btn.style.backgroundColor = "transparent";
+                    btn.onclick = () => {
+                        opt.action();
+                        if (menu.parentNode) document.body.removeChild(menu);
+                    };
+                    menu.appendChild(btn);
+                });
+
+                document.body.appendChild(menu);
+
+                const closeMenu = () => {
+                    if (menu.parentNode) document.body.removeChild(menu);
+                    document.removeEventListener("click", closeMenu);
+                };
+                setTimeout(() => document.addEventListener("click", closeMenu), 0);
+            });
         }
 
         handElement.appendChild(cardElement);

@@ -1,0 +1,31 @@
+modules = ["nodejs-24", "python-base-3.13"]
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Game Server"
+
+[[workflows.workflow]]
+name = "Game Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8766
+externalPort = 80
+
+[agent]
+expertMode = true

@@ -3178,6 +3178,10 @@ function bindEvents() {
     button.addEventListener("click", () => showView(button.dataset.view));
   });
 
+  document.getElementById("multiplayerButton").addEventListener("click", () => {
+    window.location.href = "html/multiplayer.html";
+  });
+
   document.querySelectorAll("[data-open-self]").forEach(button => {
     button.addEventListener("click", () => {
       window.location.href = "html/self.html";

@@ -3,6 +3,7 @@ import {
     set,
     get,
     update,
+    remove,
     onValue,
     runTransaction,
     serverTimestamp
@@ -183,28 +184,33 @@ function shuffleCards(cards) {
     return shuffled;
 }
 
-export async function createRoom(user) {
-    console.log("createRoom() called with user:", user);
+export async function createRoom(user, opts = {}) {
+    console.log("createRoom() called with user:", user, "opts:", opts);
 
     if (!user) {
         throw new Error("No user found. Guest login did not finish.");
     }
 
     const roomCode = generateRoomCode();
+    const nickname = opts.nickname || "Player 1";
+    const isPublic = Boolean(opts.isPublic);
+    const lobbyName = opts.lobbyName || (nickname + "'s Game");
+
     console.log("Generated room code:", roomCode);
 
     const matchRef = ref(database, `matches/${roomCode}`);
-    console.log("Firebase match ref created:", matchRef);
 
     await set(matchRef, {
         status: "waiting",
         createdAt: serverTimestamp(),
         hostUid: user.uid,
+        isPublic,
+        lobbyName,
 
         players: {
             p1: {
                 uid: user.uid,
-                name: "Player 1",
+                name: nickname,
                 connected: true,
                 ready: false
             }
@@ -229,14 +235,21 @@ export async function createRoom(user) {
         }
     });
 
-    console.log("Firebase set() finished.");
+    if (isPublic) {
+        await set(ref(database, `lobbies/${roomCode}`), {
+            name: lobbyName,
+            host: nickname,
+            createdAt: serverTimestamp()
+        });
+    }
 
+    console.log("Firebase set() finished.");
     return roomCode;
 }
 
-export async function joinRoom(roomCode, user) {
-    const cleanRoomCode = roomCode.trim().toUpperCase();
-    const matchRef = ref(database, `matches/${cleanRoomCode}`);
+export async function joinRoom(roomCode, user, nickname = "Player 2") {
+    const code = roomCode.trim().toUpperCase();
+    const matchRef = ref(database, `matches/${code}`);
 
     const snapshot = await get(matchRef);
 
@@ -255,7 +268,7 @@ export async function joinRoom(roomCode, user) {
 
         "players/p2": {
             uid: user.uid,
-            name: "Player 2",
+            name: nickname,
             connected: true,
             ready: false
         },
@@ -268,7 +281,32 @@ export async function joinRoom(roomCode, user) {
         }
     });
 
-    return cleanRoomCode;
+    // Remove from public lobby list if it was public
+    try {
+        await remove(ref(database, `lobbies/${code}`));
+    } catch (_) {}
+
+    return code;
+}
+
+export function listPublicLobbies(callback) {
+    const lobbiesRef = ref(database, "lobbies");
+    return onValue(lobbiesRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        const list = Object.entries(data).map(([code, lobby]) => ({
+            code,
+            name: lobby.name || code,
+            host: lobby.host || "Unknown",
+            createdAt: lobby.createdAt || 0
+        })).sort((a, b) => b.createdAt - a.createdAt);
+        callback(list);
+    });
+}
+
+export async function removeFromLobbyList(roomCode) {
+    try {
+        await remove(ref(database, `lobbies/${roomCode.trim().toUpperCase()}`));
+    } catch (_) {}
 }
 
 export function subscribeToMatch(roomCode, callback) {
