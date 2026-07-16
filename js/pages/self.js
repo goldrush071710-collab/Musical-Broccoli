@@ -2388,7 +2388,6 @@ function showDeckViewer(player) {
         b.style.cssText = `padding:5px 10px;background:${bg};color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;`;
         return b;
     }
-
     const revealAllBtn = mkBtn("Reveal All", "#4CAF50");
     revealAllBtn.onclick = () => { player.deck.forEach(c => c.faceUp = true); buildGrid(); addGameLog(`${player.name}'s deck revealed`); };
     toolbar.appendChild(revealAllBtn);
@@ -2409,57 +2408,44 @@ function showDeckViewer(player) {
     const cardGrid = document.createElement("div");
     cardGrid.style.cssText = "overflow-y:auto;flex:1;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;align-content:start;";
 
-    let dragSrcIndex = null;
-    let dragOverIndex = null;
-    const frameRefs = [];
+    // Ghost placeholder — the visible "gap" that moves as you drag
+    const ghost = document.createElement("div");
+    ghost.style.cssText = "border-radius:4px;border:2px dashed #FFD700;background:rgba(255,215,0,0.10);aspect-ratio:5/7;box-sizing:border-box;display:none;pointer-events:none;";
 
-    function clearDragStyles() {
-        frameRefs.forEach(f => {
-            f.style.transform = "";
-            f.style.opacity = "1";
-            f.style.boxShadow = "";
-            f.style.borderColor = "#555";
-            f.style.zIndex = "";
+    let dragSrcIndex = null;   // display index of card being dragged
+    let ghostTarget  = null;   // frame element ghost is currently sitting before (null = end)
+    const frameRefs  = [];     // ordered array of frame elements
+
+    // FLIP: smoothly animate cards from their old positions to new ones after a DOM change
+    function flipAnimate(doChange) {
+        const before = frameRefs.map(f => f.getBoundingClientRect());
+        doChange();
+        frameRefs.forEach((f, i) => {
+            const after = f.getBoundingClientRect();
+            const dx = before[i].left - after.left;
+            const dy = before[i].top  - after.top;
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                f.style.transition = "none";
+                f.style.transform  = `translate(${dx}px,${dy}px)`;
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    f.style.transition = "transform 0.18s ease";
+                    f.style.transform  = "";
+                }));
+            }
         });
     }
 
-    function applyDragStyles() {
-        clearDragStyles();
-        if (dragSrcIndex === null || dragOverIndex === null || dragSrcIndex === dragOverIndex) return;
-        const src = dragSrcIndex;
-        const dst = dragOverIndex;
-
-        // Source: ghost/faded
-        if (frameRefs[src]) {
-            frameRefs[src].style.opacity = "0.22";
-            frameRefs[src].style.transform = "scale(0.88)";
-        }
-
-        // Cards between src and dst: slide slightly to show they are shifting
-        const lo = Math.min(src, dst);
-        const hi = Math.max(src, dst);
-        const dir = dst > src ? 1 : -1; // 1 = moving right/down, -1 = moving left/up
-
-        for (let i = lo; i <= hi; i++) {
-            if (i === src) continue;
-            const f = frameRefs[i];
-            if (!f) continue;
-            if (i === dst) {
-                // Target slot: bigger shift + gold glow to show insertion point
-                const px = dir > 0 ? "10px" : "-10px";
-                f.style.transform = `translateX(${px}) scale(0.91)`;
-                f.style.boxShadow = dir > 0
-                    ? "-4px 0 0 0 #FFD700, 0 0 0 2px #FFD70088"
-                    : "4px 0 0 0 #FFD700, 0 0 0 2px #FFD70088";
-                f.style.borderColor = "#FFD700";
-                f.style.zIndex = "1";
+    // Move ghost before `beforeFrame` (or append if null), animating surrounding cards
+    function moveGhost(beforeFrame) {
+        if (ghostTarget === beforeFrame) return; // already there
+        ghostTarget = beforeFrame;
+        flipAnimate(() => {
+            if (beforeFrame) {
+                cardGrid.insertBefore(ghost, beforeFrame);
             } else {
-                // In-between: subtle nudge showing they are being pushed
-                const px = dir > 0 ? "5px" : "-5px";
-                f.style.transform = `translateX(${px})`;
-                f.style.opacity = "0.75";
+                cardGrid.appendChild(ghost);
             }
-        }
+        });
     }
 
     function buildGrid() {
@@ -2467,13 +2453,16 @@ function showDeckViewer(player) {
         cardGrid.innerHTML = "";
         frameRefs.length = 0;
         dragSrcIndex = null;
-        dragOverIndex = null;
+        ghostTarget  = null;
+        ghost.style.display = "none";
         const display = [...player.deck].reverse();
 
         display.forEach((card, displayIndex) => {
             const frame = document.createElement("div");
             frame.draggable = true;
-            frame.style.cssText = "position:relative;cursor:grab;border-radius:4px;overflow:hidden;border:1px solid #555;user-select:none;transition:transform 0.14s ease,opacity 0.13s ease,box-shadow 0.13s ease,border-color 0.13s ease;";
+            frame._card = card;
+            frame._di   = displayIndex;
+            frame.style.cssText = "position:relative;cursor:grab;border-radius:4px;overflow:hidden;border:1px solid #555;user-select:none;";
             frameRefs.push(frame);
 
             // Position number badge
@@ -2481,7 +2470,6 @@ function showDeckViewer(player) {
             badge.textContent = displayIndex + 1;
             badge.style.cssText = "position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.82);color:#fff;font-size:10px;font-weight:bold;padding:1px 5px;border-radius:3px;z-index:2;pointer-events:none;line-height:15px;min-width:14px;text-align:center;";
 
-            // Card image
             const img = document.createElement("img");
             img.src = card.faceUp && card.image ? card.image : cardBackImage;
             img.alt = card.faceUp && card.name ? card.name : "Card";
@@ -2498,18 +2486,17 @@ function showDeckViewer(player) {
                 b.style.cssText = `width:100%;padding:3px 2px;font-size:9px;background:${bg};color:#fff;border:none;border-radius:2px;cursor:pointer;white-space:nowrap;`;
                 return b;
             }
-
-            const rBtn = mkSmBtn(card.faceUp ? "Hide" : "Reveal", "#2196F3");
+            const rBtn   = mkSmBtn(card.faceUp ? "Hide" : "Reveal", "#2196F3");
             rBtn.onclick = (e) => { e.stopPropagation(); card.faceUp = !card.faceUp; buildGrid(); };
 
-            const hBtn = mkSmBtn("\u2192 Hand", "#FF9800");
-            hBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; player.hand.push(card); player.deck.splice(idx, 1); window.renderHands?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s hand`); };
+            const hBtn   = mkSmBtn("\u2192 Hand", "#FF9800");
+            hBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx===-1) return; player.hand.push(card); player.deck.splice(idx,1); window.renderHands?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s hand`); };
 
             const botBtn = mkSmBtn("\u2193 Bottom", "#9C27B0");
-            botBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; player.deck.splice(idx, 1); player.deck.unshift(card); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to bottom of ${player.name}'s deck`); };
+            botBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx===-1) return; player.deck.splice(idx,1); player.deck.unshift(card); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to bottom of ${player.name}'s deck`); };
 
-            const tBtn = mkSmBtn("\uD83D\uDDD1 Trash", "#F44336");
-            tBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx === -1) return; if (!player.trash) player.trash = []; player.trash.push(card); player.deck.splice(idx, 1); window.renderTrash?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s trash`); };
+            const tBtn   = mkSmBtn("\uD83D\uDDD1 Trash", "#F44336");
+            tBtn.onclick = (e) => { e.stopPropagation(); const idx = player.deck.indexOf(card); if (idx===-1) return; if (!player.trash) player.trash=[]; player.trash.push(card); player.deck.splice(idx,1); window.renderTrash?.(); window.renderDecks?.(); buildGrid(); addGameLog(`Card moved to ${player.name}'s trash`); };
 
             hoverPanel.appendChild(rBtn);
             hoverPanel.appendChild(hBtn);
@@ -2519,57 +2506,61 @@ function showDeckViewer(player) {
             frame.addEventListener("mouseenter", () => { if (dragSrcIndex === null) hoverPanel.style.opacity = "1"; });
             frame.addEventListener("mouseleave", () => { hoverPanel.style.opacity = "0"; });
 
+            // ── Drag source ──
             frame.addEventListener("dragstart", (e) => {
                 dragSrcIndex = displayIndex;
-                dragOverIndex = null;
-                hoverPanel.style.opacity = "0";
                 e.dataTransfer.effectAllowed = "move";
-                // defer so the drag image renders before we fade it
+                hoverPanel.style.opacity = "0";
+                // Defer so browser captures full-opacity card as drag image first
                 setTimeout(() => {
-                    if (frameRefs[displayIndex]) {
-                        frameRefs[displayIndex].style.transition = "none";
-                        frameRefs[displayIndex].style.opacity = "0.22";
-                        frameRefs[displayIndex].style.transform = "scale(0.88)";
-                        // restore transition after brief paint
-                        requestAnimationFrame(() => {
-                            if (frameRefs[displayIndex]) frameRefs[displayIndex].style.transition = "";
-                        });
-                    }
+                    ghost.style.display = "";
+                    // Size ghost to match a card cell
+                    ghost.style.width = frame.offsetWidth + "px";
+                    // Place ghost where the card was, hide the card
+                    flipAnimate(() => {
+                        cardGrid.insertBefore(ghost, frame);
+                        frame.style.visibility = "hidden";
+                    });
+                    ghostTarget = frame; // ghost is before the hidden src frame
                 }, 0);
             });
 
             frame.addEventListener("dragend", () => {
-                dragSrcIndex = null;
-                dragOverIndex = null;
-                clearDragStyles();
+                buildGrid(); // always clean rebuild on cancel or drop
             });
 
+            // ── Drag target ──
             frame.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
-                if (dragOverIndex !== displayIndex) {
-                    dragOverIndex = displayIndex;
-                    applyDragStyles();
-                }
-            });
-
-            frame.addEventListener("dragleave", (e) => {
-                // only clear if truly leaving this frame (not entering a child)
-                if (!frame.contains(e.relatedTarget)) {
-                    if (dragOverIndex === displayIndex) {
-                        dragOverIndex = null;
-                        applyDragStyles();
-                    }
-                }
+                if (frame.style.visibility === "hidden") return; // skip src frame
+                // Decide: insert ghost before or after this frame based on cursor X within cell
+                const rect = frame.getBoundingClientRect();
+                const insertBefore = e.clientX < rect.left + rect.width * 0.5;
+                moveGhost(insertBefore ? frame : frame.nextElementSibling);
             });
 
             frame.addEventListener("drop", (e) => {
                 e.preventDefault();
-                if (dragSrcIndex === null || dragSrcIndex === displayIndex) return;
-                const d = [...player.deck].reverse();
-                const [moved] = d.splice(dragSrcIndex, 1);
-                d.splice(displayIndex, 0, moved);
-                player.deck = d.reverse();
+                if (dragSrcIndex === null) return;
+
+                // Determine ghost's position in DOM among visible (non-hidden) frames
+                const children = [...cardGrid.children];
+                const ghostPos = children.indexOf(ghost);
+                if (ghostPos === -1) { buildGrid(); return; }
+
+                // Build new display order from DOM order, skipping ghost and hidden src
+                const newDisplay = [];
+                children.forEach(ch => {
+                    if (ch === ghost) {
+                        // insert dragged card here
+                        newDisplay.push(frameRefs[dragSrcIndex]._card);
+                    } else if (ch.style.visibility !== "hidden" && ch._card !== undefined) {
+                        newDisplay.push(ch._card);
+                    }
+                });
+
+                player.deck = [...newDisplay].reverse();
                 window.renderDecks?.();
                 buildGrid();
             });
@@ -2579,6 +2570,9 @@ function showDeckViewer(player) {
             frame.appendChild(hoverPanel);
             cardGrid.appendChild(frame);
         });
+
+        // Keep ghost in DOM (hidden) so it's always available
+        cardGrid.appendChild(ghost);
     }
 
     buildGrid();
@@ -2596,7 +2590,6 @@ function showDeckViewer(player) {
     overlay.onclick = (e) => { if (e.target === overlay) removeDeckViewer(); };
     document.body.appendChild(overlay);
 }
-
 function removeDeckViewer() {
     const overlay = document.getElementById("deckViewerOverlay");
     if (overlay) overlay.remove();
