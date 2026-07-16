@@ -648,9 +648,7 @@ async function initializeOnlineMultiplayer() {
     try {
         onlineMultiplayerService = await import("../firebase/multiplayerService.js");
         onlineFirebaseApp = await import("../firebase/firebaseApp.js");
-        if (!onlineFirebaseApp.auth.currentUser) {
-            await onlineFirebaseApp.signInGuest();
-        }
+        await onlineFirebaseApp.signInGuest();
         onlineUser = await onlineFirebaseApp.waitForUser();
 
         // Multiplayer code reads public board/count state plus this user's private zones only.

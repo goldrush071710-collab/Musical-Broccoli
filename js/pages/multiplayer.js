@@ -18,12 +18,9 @@ let unsubscribeLobbies = null;
 let isReady = false;
 
 // ── Nickname (persisted) ─────────────────────────────
-function getNickname() {
-    return localStorage.getItem("mp_nickname") || "";
-}
-function saveNickname(v) {
-    localStorage.setItem("mp_nickname", v.trim());
-}
+// Nickname is session-only — never saved, each tab starts fresh
+function getNickname() { return nicknameInput ? nicknameInput.value.trim() : ""; }
+function saveNickname(v) { /* intentionally no-op — no persistence */ }
 
 // ── DOM refs ─────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -257,10 +254,6 @@ async function init() {
     populateDecks(createDeckSelect);
     populateDecks(lobbyDeckSelect);
 
-    // Restore nickname
-    const saved = getNickname();
-    if (saved) nicknameInput.value = saved;
-
     // Firebase auth
     try {
         setStatus("Connecting…", "connecting");
@@ -273,8 +266,6 @@ async function init() {
 }
 
 // ── Event listeners ───────────────────────────────────
-
-nicknameInput.addEventListener("input", () => saveNickname(nicknameInput.value));
 
 isPublicToggle.addEventListener("change", () => {
     publicToggleLabel.textContent = isPublicToggle.checked
