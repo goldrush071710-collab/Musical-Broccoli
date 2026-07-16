@@ -361,23 +361,15 @@ export async function updatePrivateState(roomCode, uid, partialState) {
     await update(privateRef, partialState);
 }
 
-export async function setPlayerDeck(roomCode, uid, deckData) {
-    await updatePrivateState(roomCode, uid, {
-        selectedDeck: deckData
+export async function setPlayerDeck(roomCode, playerSlot, deckData) {
+    await update(ref(database, `matches/${cleanRoomCode(roomCode)}/players/${playerSlot}`), {
+        deck: deckData
     });
 }
 
-export async function setPlayerReady(roomCode, uid, ready) {
-    const match = await getMatch(roomCode);
-    const playerEntry = Object.entries(match?.players || {})
-        .find(([, player]) => player.uid === uid);
-
-    if (!playerEntry) {
-        throw new Error("Player is not in this room.");
-    }
-
+export async function setPlayerReady(roomCode, playerSlot, ready) {
     await update(ref(database, `matches/${cleanRoomCode(roomCode)}`), {
-        [`players/${playerEntry[0]}/ready`]: Boolean(ready)
+        [`players/${playerSlot}/ready`]: Boolean(ready)
     });
 }
 
@@ -401,8 +393,8 @@ export async function initializeMultiplayerGame(roomCode) {
         throw new Error("Both players must be ready before starting.");
     }
 
-    const player1Deck = match.private?.[player1.uid]?.selectedDeck;
-    const player2Deck = match.private?.[player2.uid]?.selectedDeck;
+    const player1Deck = match.players?.p1?.deck;
+    const player2Deck = match.players?.p2?.deck;
 
     if (!player1Deck || !player2Deck) {
         throw new Error("Both players must choose decks before starting.");

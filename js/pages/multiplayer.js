@@ -237,12 +237,12 @@ function handleMatchUpdate(match) {
         return;
     }
 
-    // Show start button to host if both ready
-    if (playerSlot === "p1" && bothReady) {
-        btnStart.classList.remove("hidden");
-        mpLobbyMsg.textContent = "Both players ready! You can start the match.";
+    // Auto-start when both ready — host triggers it
+    if (bothReady && playerSlot === "p1") {
+        mpLobbyMsg.textContent = "Both ready! Starting match…";
+        startMatch(currentRoomCode).catch(e => showError(mpLobbyError, e.message));
     } else if (bothReady) {
-        mpLobbyMsg.textContent = "Both ready — waiting for host to start.";
+        mpLobbyMsg.textContent = "Both ready — starting match…";
     } else if (!p2) {
         mpLobbyMsg.textContent = "Waiting for opponent to join…";
     } else {
@@ -363,13 +363,13 @@ btnReady.addEventListener("click", async () => {
     isReady = true;
 
     try {
-        await setPlayerDeck(currentRoomCode, currentUser.uid, {
+        await setPlayerDeck(currentRoomCode, playerSlot, {
             id: selectedDeck.id,
             name: selectedDeck.name,
             leaderKey: selectedDeck.leaderKey,
             deckText: selectedDeck.deckText
         });
-        await setPlayerReady(currentRoomCode, currentUser.uid, true);
+        await setPlayerReady(currentRoomCode, playerSlot, true);
         btnReady.textContent = "Ready ✓";
         mpLobbyMsg.textContent = "You're ready — waiting for opponent.";
     } catch (e) {
