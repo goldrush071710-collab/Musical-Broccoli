@@ -2377,11 +2377,10 @@ function showDeckViewer(player) {
     popup.style.cssText = "width:95%;max-width:1200px;max-height:88vh;background:rgba(20,20,20,0.98);border:2px solid #888;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;";
 
     const title = document.createElement("h2");
-    title.textContent = `${player.name}'s Deck (${player.deck.length} cards)`;
     title.style.cssText = "color:#fff;padding:10px 16px;margin:0;border-bottom:1px solid #555;font-size:14px;";
 
     const toolbar = document.createElement("div");
-    toolbar.style.cssText = "padding:7px 12px;border-bottom:1px solid #555;display:flex;gap:8px;flex-wrap:wrap;";
+    toolbar.style.cssText = "padding:7px 12px;border-bottom:1px solid #555;display:flex;gap:8px;flex-wrap:wrap;align-items:center;";
 
     function mkBtn(text, bg) {
         const b = document.createElement("button");
@@ -2403,35 +2402,93 @@ function showDeckViewer(player) {
     toolbar.appendChild(shuffleBtn);
 
     const hint = document.createElement("span");
-    hint.textContent = "Drag cards to reorder \u2022 Hover for actions";
-    hint.style.cssText = "color:#888;font-size:11px;align-self:center;margin-left:auto;";
+    hint.textContent = "Drag to reorder \u2022 Hover for actions";
+    hint.style.cssText = "color:#777;font-size:11px;margin-left:auto;";
     toolbar.appendChild(hint);
 
     const cardGrid = document.createElement("div");
     cardGrid.style.cssText = "overflow-y:auto;flex:1;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;align-content:start;";
 
     let dragSrcIndex = null;
+    let dragOverIndex = null;
+    const frameRefs = [];
+
+    function clearDragStyles() {
+        frameRefs.forEach(f => {
+            f.style.transform = "";
+            f.style.opacity = "1";
+            f.style.boxShadow = "";
+            f.style.borderColor = "#555";
+            f.style.zIndex = "";
+        });
+    }
+
+    function applyDragStyles() {
+        clearDragStyles();
+        if (dragSrcIndex === null || dragOverIndex === null || dragSrcIndex === dragOverIndex) return;
+        const src = dragSrcIndex;
+        const dst = dragOverIndex;
+
+        // Source: ghost/faded
+        if (frameRefs[src]) {
+            frameRefs[src].style.opacity = "0.22";
+            frameRefs[src].style.transform = "scale(0.88)";
+        }
+
+        // Cards between src and dst: slide slightly to show they are shifting
+        const lo = Math.min(src, dst);
+        const hi = Math.max(src, dst);
+        const dir = dst > src ? 1 : -1; // 1 = moving right/down, -1 = moving left/up
+
+        for (let i = lo; i <= hi; i++) {
+            if (i === src) continue;
+            const f = frameRefs[i];
+            if (!f) continue;
+            if (i === dst) {
+                // Target slot: bigger shift + gold glow to show insertion point
+                const px = dir > 0 ? "10px" : "-10px";
+                f.style.transform = `translateX(${px}) scale(0.91)`;
+                f.style.boxShadow = dir > 0
+                    ? "-4px 0 0 0 #FFD700, 0 0 0 2px #FFD70088"
+                    : "4px 0 0 0 #FFD700, 0 0 0 2px #FFD70088";
+                f.style.borderColor = "#FFD700";
+                f.style.zIndex = "1";
+            } else {
+                // In-between: subtle nudge showing they are being pushed
+                const px = dir > 0 ? "5px" : "-5px";
+                f.style.transform = `translateX(${px})`;
+                f.style.opacity = "0.75";
+            }
+        }
+    }
 
     function buildGrid() {
         title.textContent = `${player.name}'s Deck (${player.deck.length} cards)`;
         cardGrid.innerHTML = "";
+        frameRefs.length = 0;
+        dragSrcIndex = null;
+        dragOverIndex = null;
         const display = [...player.deck].reverse();
 
         display.forEach((card, displayIndex) => {
             const frame = document.createElement("div");
             frame.draggable = true;
-            frame.style.cssText = "position:relative;cursor:grab;border-radius:4px;overflow:hidden;border:1px solid #555;user-select:none;transition:opacity .12s,box-shadow .12s,border-color .12s;";
+            frame.style.cssText = "position:relative;cursor:grab;border-radius:4px;overflow:hidden;border:1px solid #555;user-select:none;transition:transform 0.14s ease,opacity 0.13s ease,box-shadow 0.13s ease,border-color 0.13s ease;";
+            frameRefs.push(frame);
 
+            // Position number badge
             const badge = document.createElement("div");
             badge.textContent = displayIndex + 1;
-            badge.style.cssText = "position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;font-weight:bold;padding:1px 5px;border-radius:3px;z-index:2;pointer-events:none;line-height:15px;min-width:14px;text-align:center;";
+            badge.style.cssText = "position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.82);color:#fff;font-size:10px;font-weight:bold;padding:1px 5px;border-radius:3px;z-index:2;pointer-events:none;line-height:15px;min-width:14px;text-align:center;";
 
+            // Card image
             const img = document.createElement("img");
             img.src = card.faceUp && card.image ? card.image : cardBackImage;
             img.alt = card.faceUp && card.name ? card.name : "Card";
             img.style.cssText = "width:100%;display:block;aspect-ratio:5/7;object-fit:cover;";
             img.draggable = false;
 
+            // Hover action overlay
             const hoverPanel = document.createElement("div");
             hoverPanel.style.cssText = "position:absolute;inset:0;background:rgba(0,0,0,0.72);display:flex;flex-direction:column;gap:3px;align-items:stretch;justify-content:center;opacity:0;transition:opacity .13s;z-index:3;padding:5px;box-sizing:border-box;";
 
@@ -2459,41 +2516,53 @@ function showDeckViewer(player) {
             hoverPanel.appendChild(botBtn);
             hoverPanel.appendChild(tBtn);
 
-            frame.addEventListener("mouseenter", () => { if (!dragSrcIndex && dragSrcIndex !== 0) hoverPanel.style.opacity = "1"; });
+            frame.addEventListener("mouseenter", () => { if (dragSrcIndex === null) hoverPanel.style.opacity = "1"; });
             frame.addEventListener("mouseleave", () => { hoverPanel.style.opacity = "0"; });
 
             frame.addEventListener("dragstart", (e) => {
                 dragSrcIndex = displayIndex;
+                dragOverIndex = null;
                 hoverPanel.style.opacity = "0";
-                setTimeout(() => frame.style.opacity = "0.35", 0);
                 e.dataTransfer.effectAllowed = "move";
+                // defer so the drag image renders before we fade it
+                setTimeout(() => {
+                    if (frameRefs[displayIndex]) {
+                        frameRefs[displayIndex].style.transition = "none";
+                        frameRefs[displayIndex].style.opacity = "0.22";
+                        frameRefs[displayIndex].style.transform = "scale(0.88)";
+                        // restore transition after brief paint
+                        requestAnimationFrame(() => {
+                            if (frameRefs[displayIndex]) frameRefs[displayIndex].style.transition = "";
+                        });
+                    }
+                }, 0);
             });
+
             frame.addEventListener("dragend", () => {
-                frame.style.opacity = "1";
                 dragSrcIndex = null;
-                cardGrid.querySelectorAll(".dv-drag-over").forEach(el => {
-                    el.classList.remove("dv-drag-over");
-                    el.style.boxShadow = "";
-                    el.style.borderColor = "#555";
-                });
+                dragOverIndex = null;
+                clearDragStyles();
             });
+
             frame.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
-                cardGrid.querySelectorAll(".dv-drag-over").forEach(el => {
-                    el.classList.remove("dv-drag-over");
-                    el.style.boxShadow = "";
-                    el.style.borderColor = "#555";
-                });
-                frame.classList.add("dv-drag-over");
-                frame.style.boxShadow = "0 0 0 2px #FFD700";
-                frame.style.borderColor = "#FFD700";
+                if (dragOverIndex !== displayIndex) {
+                    dragOverIndex = displayIndex;
+                    applyDragStyles();
+                }
             });
-            frame.addEventListener("dragleave", () => {
-                frame.classList.remove("dv-drag-over");
-                frame.style.boxShadow = "";
-                frame.style.borderColor = "#555";
+
+            frame.addEventListener("dragleave", (e) => {
+                // only clear if truly leaving this frame (not entering a child)
+                if (!frame.contains(e.relatedTarget)) {
+                    if (dragOverIndex === displayIndex) {
+                        dragOverIndex = null;
+                        applyDragStyles();
+                    }
+                }
             });
+
             frame.addEventListener("drop", (e) => {
                 e.preventDefault();
                 if (dragSrcIndex === null || dragSrcIndex === displayIndex) return;
@@ -2502,7 +2571,6 @@ function showDeckViewer(player) {
                 d.splice(displayIndex, 0, moved);
                 player.deck = d.reverse();
                 window.renderDecks?.();
-                dragSrcIndex = null;
                 buildGrid();
             });
 
